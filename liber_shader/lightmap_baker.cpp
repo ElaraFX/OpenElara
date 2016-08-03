@@ -440,8 +440,6 @@ struct LightmapGlobals
 		{
 			eiTag poly_inst_tag = poly_insts_accessor.get(i);
 			eiDataAccessor<eiNode> poly_inst(poly_inst_tag);
-			eiVector2* uvScale = ei_node_get_vector2(poly_inst.get(), ei_node_find_param(poly_inst.get(), "uvScale"));
-			eiVector2* uvOffset = ei_node_get_vector2(poly_inst.get(), ei_node_find_param(poly_inst.get(), "uvOffset"));
 			eiTag poly_obj_tag = ei_node_get_node(poly_inst.get(), ei_node_find_param(poly_inst.get(), "element"));
 			eiDataAccessor<eiNode> poly_obj(poly_obj_tag);
 			eiTag pos_list_tag = ei_node_get_array(poly_obj.get(), ei_node_find_param(poly_obj.get(), "pos_list"));
@@ -456,8 +454,18 @@ struct LightmapGlobals
 			poly_insts[i].tri_list_tag = tri_list_tag;
 			poly_insts[i].uv_list_tag = uv_list_tag;
 			poly_insts[i].uv_idxs_tag = uv_idxs_tag;
-			poly_insts[i].uvScale = ei_vector2(uvScale->x, uvScale->y);
-			poly_insts[i].uvOffset = ei_vector2(uvOffset->x, uvOffset->y);
+			poly_insts[i].uvScale = 0.0f;
+			poly_insts[i].uvOffset = 0.0f;
+			eiIndex uvScale_pid = ei_node_find_param(poly_inst.get(), "uvScale");
+			if (uvScale_pid != EI_NULL_INDEX)
+			{
+				poly_insts[i].uvScale = *ei_node_get_vector2(poly_inst.get(), uvScale_pid);
+			}
+			eiIndex uvOffset_pid = ei_node_find_param(poly_inst.get(), "uvOffset");
+			if (uvOffset_pid != EI_NULL_INDEX)
+			{
+				poly_insts[i].uvOffset = *ei_node_get_vector2(poly_inst.get(), uvOffset_pid);
+			}
 			poly_insts[i].transform = transform;
 			poly_insts[i].negative_scale = neg_parity(transform);
 		}

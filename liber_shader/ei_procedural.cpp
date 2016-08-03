@@ -22,9 +22,6 @@
 #include <ei_vray_proxy_facade.h>
 #include <string>
 
-#include "PathUtil.h"
-#include "PolyMesh.h"
-
 geometry (ess_loader)
 
 	enum
