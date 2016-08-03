@@ -141,6 +141,7 @@ struct PolyInstance
 	eiTag		uv_list_tag;
 	eiTag		uv_idxs_tag;
 	eiMatrix	transform;
+	eiBool		negative_scale;
 };
 
 /** Options for 2D ray-tracing (rasterization)
@@ -452,6 +453,7 @@ struct LightmapGlobals
 			poly_insts[i].uv_list_tag = uv_list_tag;
 			poly_insts[i].uv_idxs_tag = uv_idxs_tag;
 			poly_insts[i].transform = transform;
+			poly_insts[i].negative_scale = neg_parity(transform);
 		}
 	}
 
@@ -694,6 +696,10 @@ eiBool generate_ray(
 	eiVector w2 = point_transform(pos_list.get(wi2), transform);
 	eiVector wPos = hit.bary.x * w0 + hit.bary.y * w1 + hit.bary.z * w2;
 	eiVector wNormal = normalize(cross(w1 - w0, w2 - w0));
+	if (poly_inst.negative_scale)
+	{
+		wNormal = -wNormal;
+	}
 	out->E = wPos + wNormal * g->ray_bias;
 	out->dEdx = (hit.bary_dx.x * w0 + hit.bary_dx.y * w1 + hit.bary_dx.z * w2) - wPos;
 	out->dEdy = (hit.bary_dy.x * w0 + hit.bary_dy.y * w1 + hit.bary_dy.z * w2) - wPos;
