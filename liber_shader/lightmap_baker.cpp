@@ -142,6 +142,8 @@ struct PolyInstance
 	eiTag		uv_idxs_tag;
 	eiMatrix	transform;
 	eiBool		negative_scale;
+	eiVector2	uvScale;
+	eiVector2	uvOffset;
 };
 
 /** Options for 2D ray-tracing (rasterization)
@@ -438,6 +440,8 @@ struct LightmapGlobals
 		{
 			eiTag poly_inst_tag = poly_insts_accessor.get(i);
 			eiDataAccessor<eiNode> poly_inst(poly_inst_tag);
+			eiVector2* uvScale = ei_node_get_vector2(poly_inst.get(), ei_node_find_param(poly_inst.get(), "uvScale"));
+			eiVector2* uvOffset = ei_node_get_vector2(poly_inst.get(), ei_node_find_param(poly_inst.get(), "uvOffset"));
 			eiTag poly_obj_tag = ei_node_get_node(poly_inst.get(), ei_node_find_param(poly_inst.get(), "element"));
 			eiDataAccessor<eiNode> poly_obj(poly_obj_tag);
 			eiTag pos_list_tag = ei_node_get_array(poly_obj.get(), ei_node_find_param(poly_obj.get(), "pos_list"));
@@ -452,6 +456,8 @@ struct LightmapGlobals
 			poly_insts[i].tri_list_tag = tri_list_tag;
 			poly_insts[i].uv_list_tag = uv_list_tag;
 			poly_insts[i].uv_idxs_tag = uv_idxs_tag;
+			poly_insts[i].uvScale = ei_vector2(uvScale->x, uvScale->y);
+			poly_insts[i].uvOffset = ei_vector2(uvOffset->x, uvOffset->y);
 			poly_insts[i].transform = transform;
 			poly_insts[i].negative_scale = neg_parity(transform);
 		}
@@ -500,6 +506,8 @@ struct LightmapGlobals
 			for (eiInt i = 0; i < poly_insts.size(); ++i)
 			{
 				const PolyInstance & poly_inst = poly_insts[i];
+				eiVector2 uvScale = poly_inst.uvScale;
+				eiVector2 uvOffset = poly_inst.uvOffset;
 				eiDataTableAccessor<eiVector> uv_list(poly_inst.uv_list_tag);
 				eiDataTableAccessor<eiIndex> uv_idxs(poly_inst.uv_idxs_tag);
 
@@ -510,6 +518,10 @@ struct LightmapGlobals
 				for (eiUint j = 0; j < cur_vertices; ++j)
 				{
 					eiVector & v = uv_list.get(j);
+					v.x *= uvScale[0];
+					v.y *= uvScale[1];
+					v.x += uvOffset[0];
+					v.y += uvOffset[1];
 					conservative_uv_list[j] = v;
 				}
 
