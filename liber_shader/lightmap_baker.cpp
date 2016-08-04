@@ -141,9 +141,9 @@ struct PolyInstance
 	eiTag		uv_list_tag;
 	eiTag		uv_idxs_tag;
 	eiMatrix	transform;
-	eiBool		negative_scale;
 	eiVector2	uvScale;
 	eiVector2	uvOffset;
+	eiBool		flipBakeNormal;
 };
 
 /** Options for 2D ray-tracing (rasterization)
@@ -456,6 +456,7 @@ struct LightmapGlobals
 			poly_insts[i].uv_idxs_tag = uv_idxs_tag;
 			poly_insts[i].uvScale = 0.0f;
 			poly_insts[i].uvOffset = 0.0f;
+			poly_insts[i].flipBakeNormal = EI_FALSE;
 			eiIndex uvScale_pid = ei_node_find_param(poly_inst.get(), "uvScale");
 			if (uvScale_pid != EI_NULL_INDEX)
 			{
@@ -466,8 +467,12 @@ struct LightmapGlobals
 			{
 				poly_insts[i].uvOffset = *ei_node_get_vector2(poly_inst.get(), uvOffset_pid);
 			}
+			eiIndex flipBakeNormal_pid = ei_node_find_param(poly_inst.get(), "flipBakeNormal");
+			if (flipBakeNormal_pid != EI_NULL_INDEX)
+			{
+				poly_insts[i].flipBakeNormal = ei_node_get_bool(poly_inst.get(), flipBakeNormal_pid);
+			}
 			poly_insts[i].transform = transform;
-			poly_insts[i].negative_scale = neg_parity(transform);
 		}
 	}
 
@@ -716,7 +721,7 @@ eiBool generate_ray(
 	eiVector w2 = point_transform(pos_list.get(wi2), transform);
 	eiVector wPos = hit.bary.x * w0 + hit.bary.y * w1 + hit.bary.z * w2;
 	eiVector wNormal = normalize(cross(w1 - w0, w2 - w0));
-	if (poly_inst.negative_scale)
+	if (poly_inst.flipBakeNormal)
 	{
 		wNormal = -wNormal;
 	}
