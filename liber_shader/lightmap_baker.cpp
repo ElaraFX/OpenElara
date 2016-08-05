@@ -144,6 +144,7 @@ struct PolyInstance
 	eiVector2	uvScale;
 	eiVector2	uvOffset;
 	eiBool		flipBakeNormal;
+	eiScalar	bakeRayBias;
 };
 
 /** Options for 2D ray-tracing (rasterization)
@@ -427,8 +428,6 @@ struct LightmapGlobals
 		max_depth(_max_depth), 
 		res_x(1), res_y(1)
 	{
-		ray_bias = max(EI_SCALAR_EPS, ray_bias);
-
 		ei_fixed_pool_init(&node_pool, sizeof(BVHNode), NODE_POOL_BANK_SIZE);
 		ei_pool_init(&triangle_pool);
 
@@ -457,6 +456,7 @@ struct LightmapGlobals
 			poly_insts[i].uvScale = 0.0f;
 			poly_insts[i].uvOffset = 0.0f;
 			poly_insts[i].flipBakeNormal = EI_FALSE;
+			poly_insts[i].bakeRayBias = 0.0f;
 			eiIndex uvScale_pid = ei_node_find_param(poly_inst.get(), "uvScale");
 			if (uvScale_pid != EI_NULL_INDEX)
 			{
@@ -471,6 +471,11 @@ struct LightmapGlobals
 			if (flipBakeNormal_pid != EI_NULL_INDEX)
 			{
 				poly_insts[i].flipBakeNormal = ei_node_get_bool(poly_inst.get(), flipBakeNormal_pid);
+			}
+			eiIndex bakeRayBias_pid = ei_node_find_param(poly_inst.get(), "bakeRayBias");
+			if (bakeRayBias_pid != EI_NULL_INDEX)
+			{
+				poly_insts[i].bakeRayBias = ei_node_get_scalar(poly_inst.get(), bakeRayBias_pid);
 			}
 			poly_insts[i].transform = transform;
 		}
@@ -606,7 +611,7 @@ static void parameters()
 {
 	declare_array(poly_instances, EI_TYPE_TAG_NODE, EI_NULL_TAG);
 	declare_token(uv_name, "uv1");
-	declare_scalar(ray_bias, 0.1f);
+	declare_scalar(ray_bias, EI_SCALAR_EPS);
 	declare_scalar(pixel_padding, 0.5f);
 	declare_int(max_size, 10);
 	declare_int(max_depth, 30);
@@ -725,7 +730,7 @@ eiBool generate_ray(
 	{
 		wNormal = -wNormal;
 	}
-	out->E = wPos + wNormal * g->ray_bias;
+	out->E = wPos + wNormal * max(g->ray_bias, poly_inst.bakeRayBias);
 	out->dEdx = (hit.bary_dx.x * w0 + hit.bary_dx.y * w1 + hit.bary_dx.z * w2) - wPos;
 	out->dEdy = (hit.bary_dy.x * w0 + hit.bary_dy.y * w1 + hit.bary_dy.z * w2) - wPos;
 	out->I = -wNormal;
