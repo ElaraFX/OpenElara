@@ -658,7 +658,8 @@ void exit_node()
 
 eiBool support(
 	eiNode *cam, 
-	eiInt feature)
+	eiInt feature, 
+	void *feature_params)
 {
 	return (feature != EI_FEATURE_VIEWDEP_DISPLACEMENT);
 }

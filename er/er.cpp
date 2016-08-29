@@ -155,10 +155,10 @@ static void rprocess_job_started(
 		return;
 	}
 
-	const eiInt left = max(pJob->rect.left, pJob->s_win.left);
-	const eiInt right = min(pJob->rect.right, pJob->s_win.right - 1);
-	const eiInt top = max(pJob->rect.top, pJob->s_win.top);
-	const eiInt bottom = min(pJob->rect.bottom, pJob->s_win.bottom - 1);
+	const eiInt left = pJob->rect.left;
+	const eiInt right = pJob->rect.right;
+	const eiInt top = pJob->rect.top;
+	const eiInt bottom = pJob->rect.bottom;
 	const eiInt imageWidth = rp->imageWidth;
 	const eiInt imageHeight = rp->imageHeight;
 	eiColor *originalBuffer = &(rp->originalBuffer[0]);
@@ -236,8 +236,8 @@ static void rprocess_job_finished(
 		pJob->pass_id, 
 		&infoFrameBufferCache);
 
-	const eiInt tile_width = ei_framebuffer_cache_get_width(&colorFrameBufferCache);
-	const eiInt tile_height = ei_framebuffer_cache_get_height(&colorFrameBufferCache);
+	const eiInt tile_width = pJob->rect.right - pJob->rect.left + 1;
+	const eiInt tile_height = pJob->rect.bottom - pJob->rect.top + 1;
 
 	/* write bucket updates into the original buffer */
 	const eiInt imageWidth = rp->imageWidth;
@@ -488,6 +488,7 @@ int main_body(int argc, char *argv[])
 		eiBool force_progressive = EI_FALSE;
 		eiInt res_x;
 		eiInt res_y;
+		std::string lens_shader;
 
 		for (int i = 0; i < argc; ++i)
 		{
@@ -632,6 +633,25 @@ int main_body(int argc, char *argv[])
 					else
 					{
 						ei_error("No enough arguments specified for command: -samples\n");
+					}
+				}
+				else if (strcmp(argv[i], "-filter") == 0)
+				{
+					// -filter type size
+					//
+					if ((i + 2) < argc)
+					{
+						const char *filter_type = argv[i + 1];
+						const char *filter_size = argv[i + 2];
+
+						ei_override_enum("options", "filter", filter_type);
+						ei_override_scalar("options", "filter_size", (eiScalar)atof(filter_size));
+
+						i += 2;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -filter\n");
 					}
 				}
 				else if (strcmp(argv[i], "-exposure") == 0)
@@ -881,6 +901,32 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -resolution\n");
 					}
 				}
+				else if (strcmp(argv[i], "-lens") == 0)
+				{
+					// -lens shader stereo eye_distance
+					//
+					if ((i + 3) < argc)
+					{
+						ei_link("liber_shader");
+
+						const char *shader = argv[i + 1];
+						const char *stereo = argv[i + 2];
+						const char *eye_distance = argv[i + 3];
+
+						lens_shader = std::string(shader) + std::string("_OverrideLensShaderInstance");
+
+						ei_node(shader, lens_shader.data());
+							ei_param_bool("stereo", strcmp(stereo, "on") == 0 ? EI_TRUE : EI_FALSE);
+							ei_param_scalar("eye_distance", (eiScalar)atof(eye_distance));
+						ei_end_node();
+
+						i += 3;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -lens\n");
+					}
+				}
 				else if (strcmp(argv[i], "-bucket_size") == 0)
 				{
 					// -bucket_size size
@@ -1004,6 +1050,22 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -texture_openfiles\n");
 					}
 				}
+				else if (strcmp(argv[i], "-ultra_texcache") == 0)
+				{
+					// -ultra_texcache value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_bool("options", "ultra_texcache", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -ultra_texcache\n");
+					}
+				}
 				else if (strcmp(argv[i], "-dongle_activate") == 0)
 				{
 					// -dongle_activate code1 code2 license_code
@@ -1054,6 +1116,29 @@ int main_body(int argc, char *argv[])
 			}
 
 			ei_info("Finished parsing file: %s\n", filename);
+
+			if (!lens_shader.empty())
+			{
+				eiRenderParameters render_params;
+				if (ei_get_last_render_params(&render_params))
+				{
+					eiTag cam_inst_tag = ei_find_node(render_params.camera_inst);
+					if (cam_inst_tag != EI_NULL_TAG)
+					{
+						eiDataAccessor<eiNode> cam_inst(cam_inst_tag);
+						eiTag cam_item_tag = ei_node_get_node(cam_inst.get(), ei_node_find_param(cam_inst.get(), "element"));
+						if (cam_item_tag != EI_NULL_TAG)
+						{
+							eiDataAccessor<eiNode> cam_item(cam_item_tag);
+							eiTag lens_shader_tag = ei_find_node(lens_shader.data());
+							if (lens_shader_tag != EI_NULL_TAG)
+							{
+								ei_node_node(cam_item.get(), "lens_shader", lens_shader_tag);
+							}
+						}
+					}
+				}
+			}
 
 			if (display || interactive)
 			{

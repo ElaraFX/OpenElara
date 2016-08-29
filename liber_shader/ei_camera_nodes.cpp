@@ -139,9 +139,10 @@ lens (dof_camera)
 
 	eiBool support(
 		eiNode *cam, 
-		eiInt feature)
+		eiInt feature, 
+		void *feature_params)
 	{
-		return ei_std_camera_support(cam, feature);
+		return ei_std_camera_support(cam, feature, feature_params);
 	}
 
 	eiBool object_to_screen(
@@ -242,8 +243,23 @@ lens (spherical_camera)
 
 	eiBool support(
 		eiNode *cam, 
-		eiInt feature)
+		eiInt feature, 
+		void *feature_params)
 	{
+		if (feature == EI_FEATURE_MULTI_VIEW_RENDER)
+		{
+			eiScalar res_x = (eiScalar)ei_node_get_int(cam, EI_CAMERA_res_x);
+			eiBool stereo = eval_bool(stereo);
+			eiVector2 *image_subdiv = (eiVector2 *)feature_params;
+
+			if (stereo)
+			{
+				image_subdiv->x = 2.0f / res_x;
+			}
+
+			return EI_TRUE;
+		}
+
 		return EI_TRUE;
 	}
 
@@ -392,8 +408,27 @@ lens (cubemap_camera)
 
 	eiBool support(
 		eiNode *cam, 
-		eiInt feature)
+		eiInt feature, 
+		void *feature_params)
 	{
+		if (feature == EI_FEATURE_MULTI_VIEW_RENDER)
+		{
+			eiScalar res_x = (eiScalar)ei_node_get_int(cam, EI_CAMERA_res_x);
+			eiBool stereo = eval_bool(stereo);
+			eiVector2 *image_subdiv = (eiVector2 *)feature_params;
+
+			if (stereo)
+			{
+				image_subdiv->x = 12.0f / res_x;
+			}
+			else
+			{
+				image_subdiv->x = 6.0f / res_x;
+			}
+
+			return EI_TRUE;
+		}
+
 		return EI_TRUE;
 	}
 
