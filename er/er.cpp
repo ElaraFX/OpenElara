@@ -1238,22 +1238,16 @@ int main_body(int argc, char *argv[])
 										max_samples *= max_dist_samples;
 									}
 
-									if (random_lights <= 0)
-									{
-										max_samples *= 4;
-									}
-									else
-									{
-										max_samples *= max(1, random_lights / 16);
-									}
-
 									printf("Interactive samples: %d\n", max_samples);
 									ei_node_set_int(opt_node, max_samples_pid, max_samples);
 
 									ei_node_int(opt_node, "diffuse_samples", 1);
 									ei_node_int(opt_node, "sss_samples", 1);
 									ei_node_int(opt_node, "volume_indirect_samples", 1);
-									ei_node_int(opt_node, "random_lights", 16);
+									if (random_lights <= 0 || random_lights > 16)
+									{
+										ei_node_int(opt_node, "random_lights", 16);
+									}
 									ei_node_bool(opt_node, "progressive", EI_TRUE);
 
 									ei_end_edit_node(opt_node);
