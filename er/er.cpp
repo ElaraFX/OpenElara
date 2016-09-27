@@ -893,6 +893,7 @@ int main_body(int argc, char *argv[])
 
 						ei_override_int("camera", "res_x", res_x);
 						ei_override_int("camera", "res_y", res_y);
+						ei_override_scalar("camera", "aspect", (eiScalar)res_x / (eiScalar)res_y);
 
 						i += 2;
 					}
@@ -1048,6 +1049,23 @@ int main_body(int argc, char *argv[])
 					else
 					{
 						ei_error("No enough arguments specified for command: -texture_openfiles\n");
+					}
+				}
+				else if (strcmp(argv[i], "-page_file_dir") == 0)
+				{
+					// -page_file_dir dir
+					//
+					if ((i + 1) < argc)
+					{
+						const char *dir = argv[i + 1];
+
+						ei_set_page_file_dir(dir);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -page_file_dir\n");
 					}
 				}
 				else if (strcmp(argv[i], "-ultra_texcache") == 0)

@@ -217,12 +217,14 @@ lens (spherical_camera)
 	{
 		e_stereo = 0, 
 		e_eye_distance, 
+		e_up_vector, 
 	};
 
 	static void parameters()
 	{
 		declare_bool(stereo, EI_TRUE);
 		declare_scalar(eye_distance, 5.0f);
+		declare_vector(up_vector, 0.0f, 1.0f, 0.0f);
 	}
 
 	static void init()
@@ -314,32 +316,31 @@ lens (spherical_camera)
 		eiScalar hither = ei_node_get_scalar(cam, EI_CAMERA_clip_hither);
 		eiScalar yon = ei_node_get_scalar(cam, EI_CAMERA_clip_yon);
 		eiVector2 raster = raster_pos();
+
+		eiBool stereo = eval_bool(stereo);
+		eiInt view_index = 0;
+		if (stereo)
+		{
+			eiScalar half_res_x = (eiScalar)res_x * 0.5f;
+			if (raster.x < half_res_x)
+			{
+				raster.x *= 2.0f;
+				view_index = 0;
+			}
+			else
+			{
+				raster.x = (raster.x - half_res_x) * 2.0f;
+				view_index = 1;
+			}
+		}
+
 		eiScalar sx = clamp((raster.x / (eiScalar)res_x) * 2.0f - 1.0f, -1.0f, 1.0f);
 		eiScalar sy = clamp((1.0f - raster.y / (eiScalar)res_y) * 2.0f - 1.0f, -1.0f, 1.0f);
-		eiScalar dsx = 2.0f / (eiScalar)res_x;
-		eiScalar dsy = 2.0f / (eiScalar)res_y;
 
 		/* set output origin */
 		out->E = 0.0f;
 		out->dEdx = 0.0f;
 		out->dEdy = 0.0f;
-
-		eiBool stereo = eval_bool(stereo);
-		if (stereo)
-		{
-			eiScalar eye_distance = eval_scalar(eye_distance);
-			if (sx < 0.0f)
-			{
-				raster.x = raster.x * 2.0f + 1.0f;
-				out->E.x -= 0.5f * eye_distance;
-			}
-			else
-			{
-				raster.x = raster.x * 2.0f - 1.0f;
-				out->E.x += 0.5f * eye_distance;
-			}
-			dsx *= 2.0f;
-		}
 
 		/* compute spherical projection */
 		eiScalar theta = (eiScalar)EI_PI * sx;
@@ -352,6 +353,26 @@ lens (spherical_camera)
 		out->I.x = sin_theta * cos_phi;
 		out->I.y = sin_phi;
 		out->I.z = -cos_theta * cos_phi;
+
+		eiScalar dsx = 2.0f / (eiScalar)res_x;
+		eiScalar dsy = 2.0f / (eiScalar)res_y;
+
+		/* compute stereo offset based on up vector */
+		if (stereo)
+		{
+			eiScalar eye_distance = eval_scalar(eye_distance);
+			eiVector up_vector = eval_vector(up_vector);
+			eiVector right_vector = cross(out->I, up_vector);
+			if (view_index == 0)
+			{
+				out->E -= (0.5f * eye_distance) * right_vector;
+			}
+			else
+			{
+				out->E += (0.5f * eye_distance) * right_vector;
+			}
+			dsx *= 2.0f;
+		}
 		/* compute derivative with respect to raster X */
 		out->dIdx.x = cos_theta;
 		out->dIdx.y = 0.0f;
@@ -382,12 +403,14 @@ lens (cubemap_camera)
 	{
 		e_stereo = 0, 
 		e_eye_distance, 
+		e_up_vector, 
 	};
 
 	static void parameters()
 	{
 		declare_bool(stereo, EI_TRUE);
 		declare_scalar(eye_distance, 5.0f);
+		declare_vector(up_vector, 0.0f, 1.0f, 0.0f);
 	}
 
 	static void init()
@@ -586,6 +609,7 @@ lens (cubemap_camera)
 		out->dEdy = 0.0f;
 
 		eiBool stereo = eval_bool(stereo);
+		eiInt view_index = 0;
 		if (stereo)
 		{
 			eiScalar eye_distance = eval_scalar(eye_distance);
@@ -593,12 +617,12 @@ lens (cubemap_camera)
 			if (raster.x < half_res_x)
 			{
 				raster.x *= 2.0f;
-				out->E.x -= 0.5f * eye_distance;
+				view_index = 0;
 			}
 			else
 			{
 				raster.x = (raster.x - half_res_x) * 2.0f;
-				out->E.x += 0.5f * eye_distance;
+				view_index = 1;
 			}
 			pixel_to_camera_x *= 2.0f;
 		}
@@ -660,6 +684,22 @@ lens (cubemap_camera)
 		from_vec3(out->I, temp.val());
 		from_vec3(out->dIdx, temp.dx());
 		from_vec3(out->dIdy, temp.dy());
+
+		/* compute stereo offset based on up vector */
+		if (stereo)
+		{
+			eiScalar eye_distance = eval_scalar(eye_distance);
+			eiVector up_vector = eval_vector(up_vector);
+			eiVector right_vector = cross(out->I, up_vector);
+			if (view_index == 0)
+			{
+				out->E -= (0.5f * eye_distance) * right_vector;
+			}
+			else
+			{
+				out->E += (0.5f * eye_distance) * right_vector;
+			}
+		}
 
 		/* set near and far clipping */
 		out->t_near = max(out->t_near, EI_SCALAR_EPS);
