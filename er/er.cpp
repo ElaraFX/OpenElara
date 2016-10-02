@@ -236,8 +236,7 @@ static void rprocess_job_finished(
 		pJob->pass_id, 
 		&infoFrameBufferCache);
 
-	const eiInt tile_width = pJob->rect.right - pJob->rect.left + 1;
-	const eiInt tile_height = pJob->rect.bottom - pJob->rect.top + 1;
+	const eiRect4i & fb_rect = infoFrameBufferCache.m_rect;
 
 	/* write bucket updates into the original buffer */
 	const eiInt imageWidth = rp->imageWidth;
@@ -246,11 +245,15 @@ static void rprocess_job_finished(
 	originalBuffer += ((imageHeight - 1 - pJob->rect.top) * imageWidth + pJob->rect.left);
 	ei_read_lock(rp->bufferLock);
 	{
-		for (eiInt j = 0; j < tile_height; ++j)
+		for (eiInt j = fb_rect.top; j < fb_rect.bottom; ++j)
 		{
-			for (eiInt i = 0; i < tile_width; ++i)
+			for (eiInt i = fb_rect.left; i < fb_rect.right; ++i)
 			{
-				ei_framebuffer_cache_get_final(&colorFrameBufferCache, i, j, &(originalBuffer[i]));
+				ei_framebuffer_cache_get_final(
+					&colorFrameBufferCache, 
+					i, 
+					j, 
+					&(originalBuffer[i - fb_rect.left]));
 			}
 			originalBuffer -= imageWidth;
 		}
@@ -577,13 +580,11 @@ int main_body(int argc, char *argv[])
 							i += 4;
 						}
 
-						char var_name[EI_MAX_NODE_NAME_LEN];
 						char out_name[EI_MAX_NODE_NAME_LEN];
 
-						sprintf(var_name, "var_%s", name);
 						sprintf(out_name, "out_%s", name);
 
-						ei_node("outvar", var_name);
+						ei_node("outvar", name);
 							ei_param_token("name", name);
 							ei_param_int("type", strcmp(type, "scalar") == 0 ? EI_TYPE_SCALAR : EI_TYPE_COLOR);
 							ei_param_bool("filter", strcmp(filter, "on") == 0 ? EI_TRUE : EI_FALSE);
@@ -595,7 +596,7 @@ int main_body(int argc, char *argv[])
 							ei_param_token("filename", file);
 							ei_param_enum("data_type", "rgb");
 							ei_param_array("var_list", ei_tab(EI_TYPE_TAG_NODE, 1));
-								ei_tab_add_node(var_name);
+								ei_tab_add_node(name);
 							ei_end_tab();
 						ei_end_node();
 
