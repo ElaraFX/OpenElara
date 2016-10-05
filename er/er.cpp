@@ -636,6 +636,23 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -samples\n");
 					}
 				}
+				else if (strcmp(argv[i], "-diffuse_samples") == 0)
+				{
+					// -diffuse_samples value
+					//
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_int("options", "diffuse_samples", atoi(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -diffuse_samples\n");
+					}
+				}
 				else if (strcmp(argv[i], "-filter") == 0)
 				{
 					// -filter type size

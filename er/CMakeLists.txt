@@ -6,6 +6,16 @@ INCLUDE_DIRECTORIES (${CMAKE_CURRENT_SOURCE_DIR}/../liber/include)
 FILE (GLOB h_src *.h)
 FILE (GLOB cpp_src *.cpp)
 
+if (MSVC)
+	set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+	# Enable PDB generation for Release build
+	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi")
+	set (CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG")
+	# Enable SEH to support minidump
+	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /EHa")
+endif ()
+
 ADD_EXECUTABLE (er ${h_src} ${cpp_src})
 TARGET_LINK_LIBRARIES (er liber)
 
