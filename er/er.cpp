@@ -653,6 +653,74 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -diffuse_samples\n");
 					}
 				}
+				else if (strcmp(argv[i], "-sss_samples") == 0)
+				{
+					// -sss_samples value
+					//
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_int("options", "sss_samples", atoi(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -sss_samples\n");
+					}
+				}
+				else if (strcmp(argv[i], "-volume_indirect_samples") == 0)
+				{
+					// -volume_indirect_samples value
+					//
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_int("options", "volume_indirect_samples", atoi(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -volume_indirect_samples\n");
+					}
+				}
+				else if (strcmp(argv[i], "-diffuse_depth") == 0)
+				{
+					// -diffuse_depth value
+					//
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_int("options", "diffuse_depth", atoi(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -diffuse_depth\n");
+					}
+				}
+				else if (strcmp(argv[i], "-sum_depth") == 0)
+				{
+					// -sum_depth value
+					//
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_int("options", "sum_depth", atoi(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -sum_depth\n");
+					}
+				}
 				else if (strcmp(argv[i], "-filter") == 0)
 				{
 					// -filter type size
@@ -847,6 +915,22 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -GI_cache_points\n");
 					}
 				}
+				else if (strcmp(argv[i], "-GI_cache_screen_scale") == 0)
+				{
+					// -GI_cache_screen_scale value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_scalar("options", "GI_cache_screen_scale", (eiScalar)atof(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -GI_cache_screen_scale\n");
+					}
+				}
 				else if (strcmp(argv[i], "-GI_cache_preview") == 0)
 				{
 					// -GI_cache_preview value
@@ -894,6 +978,22 @@ int main_body(int argc, char *argv[])
 					else
 					{
 						ei_error("No enough arguments specified for command: -progressive\n");
+					}
+				}
+				else if (strcmp(argv[i], "-caustic") == 0)
+				{
+					// -caustic value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_bool("options", "caustic", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -caustic\n");
 					}
 				}
 				else if (strcmp(argv[i], "-resolution") == 0)
@@ -1122,6 +1222,20 @@ int main_body(int argc, char *argv[])
 					else
 					{
 						ei_error("No enough arguments specified for command: -dongle_activate\n");
+					}
+				}
+				else if (strcmp(argv[i], "-login") == 0)
+				{
+					if ((i + 1) < argc)
+					{
+						const char *code1 = argv[i + 1];
+						ei_login_with_uuid(code1);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -login\n");
 					}
 				}
 				else

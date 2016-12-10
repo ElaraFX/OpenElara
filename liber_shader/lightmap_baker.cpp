@@ -453,7 +453,7 @@ struct LightmapGlobals
 			poly_insts[i].tri_list_tag = tri_list_tag;
 			poly_insts[i].uv_list_tag = uv_list_tag;
 			poly_insts[i].uv_idxs_tag = uv_idxs_tag;
-			poly_insts[i].uvScale = 0.0f;
+			poly_insts[i].uvScale = 1.0f;
 			poly_insts[i].uvOffset = 0.0f;
 			poly_insts[i].flipBakeNormal = EI_FALSE;
 			poly_insts[i].bakeRayBias = 0.0f;
@@ -611,7 +611,7 @@ static void parameters()
 {
 	declare_array(poly_instances, EI_TYPE_TAG_NODE, EI_NULL_TAG);
 	declare_token(uv_name, "uv1");
-	declare_scalar(ray_bias, EI_SCALAR_EPS);
+	declare_scalar(ray_bias, 0.0001f);
 	declare_scalar(pixel_padding, 0.5f);
 	declare_int(max_size, 10);
 	declare_int(max_depth, 30);
