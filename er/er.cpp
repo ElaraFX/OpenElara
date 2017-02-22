@@ -454,9 +454,15 @@ int main_body(int argc, char *argv[])
 
 	-- argc, ++ argv;
 
-	if (argc == 1 && strcmp(argv[0], "-licsvr") == 0)
+	if ((argc == 1 || argc == 2) && strcmp(argv[0], "-licsvr") == 0)
 	{
-		ei_run_license_server();
+		const char *uuid_str = NULL;
+		if (argc == 2)
+		{
+			uuid_str = argv[1];
+		}
+
+		ei_run_license_server(uuid_str);
 	}
 	else if (argc == 1 && strcmp(argv[0], "-id") == 0)
 	{
@@ -492,6 +498,10 @@ int main_body(int argc, char *argv[])
 		eiInt res_x;
 		eiInt res_y;
 		std::string lens_shader;
+		eiBool force_render = EI_FALSE;
+		std::string force_render_root_name;
+		std::string force_render_cam_name;
+		std::string force_render_option_name;
 
 		for (int i = 0; i < argc; ++i)
 		{
@@ -1228,14 +1238,32 @@ int main_body(int argc, char *argv[])
 				{
 					if ((i + 1) < argc)
 					{
-						const char *code1 = argv[i + 1];
-						ei_login_with_uuid(code1);
+						const char *uuid_str = argv[i + 1];
+
+						ei_login_with_uuid(uuid_str);
 
 						i += 1;
 					}
 					else
 					{
 						ei_error("No enough arguments specified for command: -login\n");
+					}
+				}
+				else if (strcmp(argv[i], "-render") == 0)
+				{
+					if ((i + 3) < argc)
+					{
+						force_render_root_name = argv[i + 1];
+						force_render_cam_name = argv[i + 2];
+						force_render_option_name = argv[i + 3];
+
+						force_render = EI_TRUE;						
+
+						i += 3;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -render\n");
 					}
 				}
 				else
@@ -1258,7 +1286,7 @@ int main_body(int argc, char *argv[])
 		{
 			ei_info("Start parsing file: %s\n", filename);
 
-			if (!ei_parse2(filename, ignore_render || display || interactive))
+			if (!ei_parse2(filename, ignore_render || display || interactive || force_render))
 			{
 				ei_error("Failed to parse file: %s\n", filename);
 
@@ -1290,12 +1318,25 @@ int main_body(int argc, char *argv[])
 				}
 			}
 
-			if (display || interactive)
+			if (display || interactive || force_render)
 			{
 				ei_info("Start display and rendering...\n");
 
 				eiRenderParameters render_params;
-				if (!ei_get_last_render_params(&render_params))
+				memset(&render_params, 0, sizeof(render_params));
+				eiBool get_render_params = EI_FALSE;
+				if (force_render)
+				{
+					strncpy(render_params.root_instgroup, force_render_root_name.c_str(), EI_MAX_NODE_NAME_LEN - 1);
+					strncpy(render_params.camera_inst, force_render_cam_name.c_str(), EI_MAX_NODE_NAME_LEN - 1);
+					strncpy(render_params.options, force_render_option_name.c_str(), EI_MAX_NODE_NAME_LEN - 1);
+					get_render_params = EI_TRUE;
+				}
+				else
+				{
+					get_render_params = ei_get_last_render_params(&render_params);
+				}
+				if (!get_render_params)
 				{
 					ei_error("Cannot get last render parameters.\n");
 				}
@@ -1413,7 +1454,10 @@ int main_body(int argc, char *argv[])
 								rp.renderThread = ei_create_thread(render_callback, &render_params, NULL);
 								ei_set_low_thread_priority(rp.renderThread);
 
-								ei_display(display_callback, &rp, res_x, res_y);
+								if (display)
+								{
+									ei_display(display_callback, &rp, res_x, res_y);
+								}								
 
 								ei_wait_thread(rp.renderThread);
 								ei_delete_thread(rp.renderThread);
