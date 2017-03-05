@@ -25,6 +25,7 @@
 #include <vector>
 #include <deque>
 #include <OpenImageIO/filesystem.h>
+#include <signal.h>
 
 static const char *g_str_on = "on";
 
@@ -1457,7 +1458,7 @@ int main_body(int argc, char *argv[])
 								if (display)
 								{
 									ei_display(display_callback, &rp, res_x, res_y);
-								}								
+								}
 
 								ei_wait_thread(rp.renderThread);
 								ei_delete_thread(rp.renderThread);
@@ -1525,7 +1526,7 @@ BOOL CALLBACK MyMiniDumpCallback(
 			if (!(pOutput->ModuleWriteFlags & ModuleReferencedByMemory))
 			{
 				// No, it does not - exclude it
-				printf("Excluding module: %s \n", pInput->Module.FullPath);
+				/* printf("Excluding module: %s \n", pInput->Module.FullPath); */
 				pOutput->ModuleWriteFlags &= (~ModuleWriteModule);
 			}
 			bRet = TRUE;
@@ -1591,9 +1592,31 @@ void CreateMiniDump(EXCEPTION_POINTERS *pep)
 	}
 }
 
+void ctrl_c_handler(int param)
+{
+	printf("Ctrl + C detected.\n");
+	ei_handle_exception();
+}
+
+void ctrl_break_handler(int param)
+{
+	printf("Ctrl + Break detected.\n");
+	ei_handle_exception();
+}
+
+void term_handler(int param)
+{
+	printf("Software termination detected.\n");
+	ei_handle_exception();
+}
+
 int main(int argc, char *argv[])
 {
 	int retcode = EXIT_FAILURE;
+
+	signal(SIGINT, ctrl_c_handler);
+	signal(SIGBREAK, ctrl_break_handler);
+	signal(SIGTERM, term_handler);
 
 	__try
 	{
@@ -1601,6 +1624,8 @@ int main(int argc, char *argv[])
 	}
 	__except (CreateMiniDump(GetExceptionInformation()), EXCEPTION_EXECUTE_HANDLER)
 	{
+		printf("C/C++ exception detected.\n");
+		ei_handle_exception();
 	}
 
 	return retcode;
