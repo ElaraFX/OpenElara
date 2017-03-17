@@ -206,6 +206,14 @@ EH_API void EH_add_mesh(EH_Context *ctx, const char *name, const EH_Mesh *mesh);
 
 
 
+/** The texture to be connected to material.
+ */
+struct EH_Texture
+{
+	const char *filename;	/**< The image filename */
+	float repeat;			/**< The repeat scale */
+};
+
 /** The material data for user to fill
  */
 struct EH_Material
@@ -215,16 +223,14 @@ struct EH_Material
 	/* Diffuse layer */
 	float diffuse_weight;
 	EH_RGB diffuse_color;		/**< Diffuse color */
-	const char *diffuse_tex;	/**< The filename of diffuse texture */
-	float diffuse_tex_repeat;	/**< The repeat scale of diffuse texture */
+	EH_Texture diffuse_tex;		/**< Diffuse texture */
 	float roughness;
 	float backlight;
 
 	/* Specular layer */
 	float specular_weight;
-	EH_RGB specular_color;	/**< Specular color */
-	const char *specular_tex;	/**< The filename of specular texture */
-	float specular_tex_repeat;	/**< The repeat scale of specular texture */
+	EH_RGB specular_color;		/**< Specular color */
+	EH_Texture specular_tex;	/**< Specular texture */
 	float glossiness;
 	float specular_fresnel;
 	float anisotropy;
@@ -233,13 +239,11 @@ struct EH_Material
 	/* Transparency layer */
 	float transp_weight;		/**< Transparency weight */
 	bool transp_invert_weight;
-	const char *transp_tex;		/**< The filename of transparency texture */
-	float transp_tex_repeat;	/**< The repeat scale of transparency texture */
+	EH_Texture transp_tex;		/**< Transparency texture */
 
 	/* Bump mapping */
 	float bump_weight;
-	const char *bump_tex;		/**< The texture for bump mapping */
-	float bump_tex_repeat;		/**< The repeat scale of bump texture */
+	EH_Texture bump_tex;		/**< The texture for bump mapping */
 	bool normal_bump;			/**< The bump texture is actually a normal map? */
 
 	/* Mirror layer */
@@ -277,6 +281,24 @@ struct EH_MeshInstance
  * \param The mesh instance data
  */
 EH_API void EH_add_mesh_instance(EH_Context *ctx, const char *name, const EH_MeshInstance *inst);
+
+
+
+/** The instance of an assembly.
+ * An assembly is an ESS file exported before hand. You can import its 
+ * content into current scene later using assembly instance.
+ */
+struct EH_AssemblyInstance
+{
+	const char *filename;	/**< The name of the ESS file to import */
+	EH_Mat mesh_to_world;	/**< Assembly local space to world space transform */
+};
+
+/** Instance an assembly into the scene.
+ * \param name The name of the assembly instance
+ * \param The assembly instance data
+ */
+EH_API void EH_add_assembly_instance(EH_Context *ctx, const char *name, const EH_AssemblyInstance *inst);
 
 
 
