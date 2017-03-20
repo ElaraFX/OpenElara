@@ -15,10 +15,11 @@
  *************************************************************************/
 
 #include "esswriter.h"
+#include <assert.h>
 
 using namespace std;
 
-inline bool Checkei_vectorNan(ei_vector &val)
+inline bool Checkei_vectorNan(eiVector &val)
 {
 	if (!_finite(val.x))return true;
 	if (!_finite(val.y))return true;
@@ -26,7 +27,7 @@ inline bool Checkei_vectorNan(ei_vector &val)
 	return false;
 }
 
-inline bool Checkei_vector2Nan(ei_vector2 &val)
+inline bool Checkei_vector2Nan(eiVector2 &val)
 {
 	if (!_finite(val.x))return true;
 	if (!_finite(val.y))return true;
@@ -36,8 +37,8 @@ inline bool Checkei_vector2Nan(ei_vector2 &val)
 std::string utf16_to_utf8(const char* str)
 {
 	std::string utf8;
-	utf8.resize(WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL));
-	WideCharToMultiByte(CP_UTF8, 0, str, -1, &utf8[0], (int)utf8.size(), NULL, NULL);
+	//utf8.resize(WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL));
+	//WideCharToMultiByte(CP_UTF8, 0, str, -1, &utf8[0], (int)utf8.size(), NULL, NULL);
 	return utf8;
 }
 
@@ -74,19 +75,19 @@ size_t base85_calc_encode_bound(size_t input_length)
 
 size_t base85_encode(const BYTE *data, size_t input_length, BYTE *encoded_data)
 {
-	UINT32 remainder = input_length % 4;
-	UINT32 padding_size = 0;
+	size_t remainder = input_length % 4;
+	size_t padding_size = 0;
 	if (remainder > 0)
 	{
 		padding_size = 4 - remainder;
 	}
-	UINT32 padded_length = input_length + padding_size;
-	UINT32 output_length = (padded_length / 4) * 5 - padding_size;
+	size_t padded_length = input_length + padding_size;
+	size_t output_length = (padded_length / 4) * 5 - padding_size;
 
-	UINT32 char_nbr = 0;
-	for (UINT32 byte_nbr = 0; byte_nbr < padded_length; byte_nbr += 4)
+	size_t char_nbr = 0;
+	for (size_t byte_nbr = 0; byte_nbr < padded_length; byte_nbr += 4)
 	{
-		UINT32 value = 0;
+		size_t value = 0;
 		if (byte_nbr + 0 < input_length)
 		{
 			value += (data[byte_nbr + 0] << 3 * 8);
@@ -138,7 +139,7 @@ size_t base85_encode(const BYTE *data, size_t input_length, BYTE *encoded_data)
 
 #define CHECK_STREAM() if(!mStream.is_open()) return;
 #define CHECK_EDIT_MODE() if(!mInNode) return;
-#define STR_WRAP(x) "\"" << (utf16_to_utf8(x).data()) << "\""
+#define STD_WARP(x) "\"" << (utf16_to_utf8(x).data()) << "\""
 #define ADD_PROPERTY_ITEM(decl, func) \
 	decl value;\
 	if (propMap.get_property(it->first, value)) { func(it->first, value); }
@@ -163,7 +164,7 @@ void EssWriter::Close()
 	std::locale::global(mPreviousLocale);
 }
 
-void EssWriter::BeginNode(const char* type, const tstring& name)
+void EssWriter::BeginNode(const char* type, const string& name)
 {
 	BeginNode(type, &name[0]);
 }
@@ -172,15 +173,30 @@ void EssWriter::BeginNode(const char* type, const char* name)
 {
 	if (mInNode) EndNode();
 	CHECK_STREAM();
-	mStream << "node " << STR_WRAP(type) << " " << STR_WRAP(name) << endl;
+	mStream << "node " << (type) << " " << (name) << endl;
 	mInNode = true;
 }
 
-void EssWriter::LinkParam(const char* input, const tstring& shader, const char* output)
+void EssWriter::BeginNameSpace(const char *name)
+{
+	mStream << "namespace " << name << endl;
+}
+
+void EssWriter::AddParseEss(const char *ess_name)
+{
+	mStream << "\tparse2 " << ess_name << " on" << endl;
+}
+
+void EssWriter::EndNameSpace()
+{
+	mStream << "end namespace" << endl;
+}
+
+void EssWriter::LinkParam(const char* input, const string& shader, const char* output)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tparam_link " << STR_WRAP(input) << " " << STR_WRAP(shader) << " " << STR_WRAP(output) << endl;
+	mStream << "\tparam_link " << (input) << " " << (shader) << " " << (output) << endl;
 }
 
 
@@ -188,49 +204,56 @@ void EssWriter::AddScaler(const char* name, const float value)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tscalar " << STR_WRAP(name) << " " << value << endl;
+	mStream << "\tscalar " << (name) << " " << value << endl;
 }
 
 void EssWriter::AddInt(const char * name, const int value)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tint " << STR_WRAP(name) << " " << value << endl;
+	mStream << "\tint " << (name) << " " << value << endl;
 }
 
-void EssWriter::AddVector4(const char* name, const VEC4& value)
+void EssWriter::AddVector4(const char* name, const eiVector4& value)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tvector4 " << STR_WRAP(name) << " " << value.x << " " << value.y << " " << value.z << " " << value.w << endl;
+	mStream << "\tvector4 " << (name) << " " << value.x << " " << value.y << " " << value.z << " " << value.w << endl;
 }
 
-void EssWriter::AddVector3(const char* name, const ei_vector& value)
+void EssWriter::AddVector3(const char* name, const eiVector& value)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tvector " << STR_WRAP(name) << " " << value.x << " " << value.y << " " << value.z << endl;
+	mStream << "\tvector " << (name) << " " << value.x << " " << value.y << " " << value.z << endl;
 }
 
-void EssWriter::AddToken(const char* name, const tstring& value)
+void EssWriter::AddVector2(const char* name, const eiVector2& value)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\ttoken " << STR_WRAP(name) << " " << STR_WRAP(value) << endl;
+	mStream << "\tvector2 " << (name) << " " << value.x << " " << value.y << endl;
 }
 
-void EssWriter::AddColor(const char * name, const VEC4& value)
+void EssWriter::AddToken(const char* name, const string& value)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tcolor " << STR_WRAP(name) << " " << value.x * value.w << " " << value.y * value.w << " " << value.z * value.w << endl;
+	mStream << "\ttoken " << (name) << " " << (value) << endl;
 }
 
-void EssWriter::AddColor(const char * name, const ei_vector& value)
+void EssWriter::AddColor(const char * name, const eiVector4& value)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tcolor " << STR_WRAP(name) << " " << value.x << " " << value.y<< " " << value.z<< endl;
+	mStream << "\tcolor " << (name) << " " << value.x * value.w << " " << value.y * value.w << " " << value.z * value.w << endl;
+}
+
+void EssWriter::AddColor(const char * name, const eiVector& value)
+{
+	CHECK_STREAM();
+	CHECK_EDIT_MODE();
+	mStream << "\tcolor " << (name) << " " << value.x << " " << value.y<< " " << value.z<< endl;
 }
 
 
@@ -238,34 +261,34 @@ void EssWriter::AddBool(const char* name, const bool value)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tbool " << STR_WRAP(name) << " " << (value ? "on" : "off") << endl;
+	mStream << "\tbool " << (name) << " " << (value ? "on" : "off") << endl;
 }
 
-void EssWriter::AddRef(const tstring& name, const tstring& ref)
+void EssWriter::AddRef(const string& name, const string& ref)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tref " <<  STR_WRAP(name) <<" " << STR_WRAP(ref) << endl;
+	mStream << "\tref " <<  (name) <<" " << (ref) << endl;
 }
 
-void EssWriter::AddRefGroup(const char* grouptype, std::vector<tstring>& refelements)
+void EssWriter::AddRefGroup(const char* grouptype, std::vector<string>& refelements)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tref[] " << STR_WRAP(grouptype) << " 1" << endl;
-	for (std::vector<tstring>::iterator it = refelements.begin();
+	mStream << "\tref[] " << (grouptype) << " 1" << endl;
+	for (std::vector<string>::iterator it = refelements.begin();
 	it != refelements.end();
 	++it)
 	{
-		mStream << "\t\t" << STR_WRAP(*it) << endl;
+		mStream << "\t\t" << (*it) << endl;
 	}
 }
 
-void EssWriter::Addei_matrixrix(const char* name, const ei_matrix& ei_matrixrix)
+void EssWriter::AddMatrix(const char* name, const eiMatrix& ei_matrixrix)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tei_matrixrix " << STR_WRAP(name) << " ";
+	mStream << "\tei_matrixrix " << (name) << " ";
 	for (int row = 0; row < 4; ++row)
 	{
 		for (int col = 0; col < 4; ++col)
@@ -279,13 +302,13 @@ void EssWriter::AddEnum(const char* name, const char* value)
 {	
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tenum " <<  STR_WRAP(name) <<" " << STR_WRAP(value) << endl;
+	mStream << "\tenum " <<  (name) <<" " << (value) << endl;
 }
 
 void EssWriter::AddRenderCommand(const char* inst_group_name, const char* cam_name, const char* option_name)
 {
 	CHECK_STREAM();
-	mStream << "render " << STR_WRAP(inst_group_name) << " " << STR_WRAP(cam_name) << " " << STR_WRAP(option_name) << endl;
+	mStream << "render " << (inst_group_name) << " " << (cam_name) << " " << (option_name) << endl;
 }
 
 void EssWriter::AddDeclare()
@@ -299,10 +322,10 @@ void EssWriter::AddDeclare(const char* type, const char* name, const char *stora
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tdeclare " << utf16_to_utf8(type).data() << " " << STR_WRAP(name) << " " << utf16_to_utf8(storage_class).data() << endl;
+	mStream << "\tdeclare " << utf16_to_utf8(type).data() << " " << (name) << " " << utf16_to_utf8(storage_class).data() << endl;
 }
 
-void EssWriter::AddIndexArray(const char* name, const int* pIndexArray, size_t arraySize, bool faceVarying)
+void EssWriter::AddIndexArray(const char* name, const size_t* pIndexArray, size_t arraySize, bool faceVarying)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
@@ -311,14 +334,14 @@ void EssWriter::AddIndexArray(const char* name, const int* pIndexArray, size_t a
 		if (faceVarying)
 		{
 			AddDeclare();
-			mStream << "\tb85_index[] " << STR_WRAP(name) << " facevarying";
+			mStream << "\tb85_index[] " << (name) << " facevarying";
 		}else{
-			mStream << "\tb85_index[] " << STR_WRAP(name) << " 1 ";
+			mStream << "\tb85_index[] " << (name) << " 1 ";
 		}
 
-		size_t memSize = base85_calc_encode_bound(arraySize * sizeof(UINT));
+		size_t memSize = base85_calc_encode_bound(arraySize * sizeof(unsigned int));
 		BYTE* pOutBuffer = new BYTE[memSize];
-		size_t realSize = base85_encode((BYTE*)pIndexArray, arraySize * sizeof(UINT), pOutBuffer);
+		size_t realSize = base85_encode((BYTE*)pIndexArray, arraySize * sizeof(unsigned int), pOutBuffer);
 		mStream.write((char*)pOutBuffer, realSize);
 		mStream << endl;
 		assert(memSize == realSize);
@@ -330,9 +353,9 @@ void EssWriter::AddIndexArray(const char* name, const int* pIndexArray, size_t a
 		if (faceVarying)
 		{
 			AddDeclare();
-			mStream << "\tindex[] " << STR_WRAP(name) << " facevarying";
+			mStream << "\tindex[] " << (name) << " facevarying";
 		}else{
-			mStream << "\tindex[] " << STR_WRAP(name) << " 1 ";
+			mStream << "\tindex[] " << (name) << " 1 ";
 		}
 
 		for (UINT i=0;i<arraySize;i++)
@@ -350,31 +373,28 @@ void EssWriter::AddIndexArray(const char* name, const int* pIndexArray, size_t a
 	}
 }
 
-void EssWriter::AddVectorArray(const char* name, const ei_vector* pVectorArray, size_t arraySize, bool faceVarying)
+void EssWriter::AddVectorArray(const char* name, const eiVector* pVectorArray, size_t arraySize, bool faceVarying)
 {
-	CHECK_STREAM();
+	/*CHECK_STREAM();
 	CHECK_EDIT_MODE();
 	if (faceVarying)
 	{
-		AddDeclare();
-		mStream << "vector[] " << STR_WRAP(name) << " facevarying" << endl;
+	AddDeclare();
+	mStream << "vector[] " << (name) << " facevarying" << endl;
 	}
-	mStream << "\tb85_vector[] " << STR_WRAP(name) << " 1 ";
+	mStream << "\tb85_vector[] " << (name) << " 1 ";*/
 	//Todo: add binary encoded data from pVectorArray
-}
 
-void EssWriter::AddPointArray(const char* name, const ei_vector* pPointArray, size_t arraySize)
-{
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
 	if (mBinartyEncoding)
 	{
-		mStream << "\tb85_point[] " << STR_WRAP(name) << " 1 ";
+		mStream << "\tb85_vector[] " << (name) << " 1 ";
 
-		size_t memSize = base85_calc_encode_bound(arraySize * sizeof(ei_vector));
+		size_t memSize = base85_calc_encode_bound(arraySize * sizeof(eiVector));
 		BYTE* pOutBuffer = new BYTE[memSize];
 
-		size_t realSize = base85_encode((BYTE*)pPointArray, arraySize * sizeof(ei_vector), pOutBuffer);
+		size_t realSize = base85_encode((BYTE*)pVectorArray, arraySize * sizeof(eiVector), pOutBuffer);
 
 		mStream.write((char*)pOutBuffer, realSize);
 		mStream << endl;
@@ -384,11 +404,73 @@ void EssWriter::AddPointArray(const char* name, const ei_vector* pPointArray, si
 	}
 	else
 	{
-		mStream << "\tpoint[] " << STR_WRAP(name) << " 1 " << endl;
+		mStream << "\tvector[] " << (name) << " 1 " << endl;
 
 		for (UINT i=0;i<arraySize;i++)
 		{
-			const ei_vector& _pos = pPointArray[i];
+			const eiVector& _vec = pVectorArray[i];
+			mStream << "\t\t" << _vec.x << " " << _vec.y << " " << _vec.z << endl;
+		}
+	}
+}
+
+void EssWriter::AddVector2Array(const char* name, const eiVector2* pVectorArray, size_t arraySize)
+{
+	CHECK_STREAM();
+	CHECK_EDIT_MODE();
+	if (mBinartyEncoding)
+	{
+		mStream << "\tb85_vector2[] " << (name) << " 1 ";
+
+		size_t memSize = base85_calc_encode_bound(arraySize * sizeof(eiVector2));
+		BYTE* pOutBuffer = new BYTE[memSize];
+
+		size_t realSize = base85_encode((BYTE*)pVectorArray, arraySize * sizeof(eiVector2), pOutBuffer);
+
+		mStream.write((char*)pOutBuffer, realSize);
+		mStream << endl;
+		assert(memSize == realSize);
+		delete[] pOutBuffer;
+		pOutBuffer = NULL;
+	}
+	else
+	{
+		mStream << "\tvector2[] " << (name) << " 1 " << endl;
+
+		for (UINT i=0; i<arraySize; i++)
+		{
+			const eiVector2& _vec = pVectorArray[i];
+			mStream << "\t\t" << _vec.x << " " << _vec.y << endl;
+		}
+	}
+}
+
+void EssWriter::AddPointArray(const char* name, const eiVector* pPointArray, size_t arraySize)
+{
+	CHECK_STREAM();
+	CHECK_EDIT_MODE();
+	if (mBinartyEncoding)
+	{
+		mStream << "\tb85_point[] " << (name) << " 1 ";
+
+		size_t memSize = base85_calc_encode_bound(arraySize * sizeof(eiVector));
+		BYTE* pOutBuffer = new BYTE[memSize];
+
+		size_t realSize = base85_encode((BYTE*)pPointArray, arraySize * sizeof(eiVector), pOutBuffer);
+
+		mStream.write((char*)pOutBuffer, realSize);
+		mStream << endl;
+		assert(memSize == realSize);
+		delete[] pOutBuffer;
+		pOutBuffer = NULL;
+	}
+	else
+	{
+		mStream << "\tpoint[] " << (name) << " 1 " << endl;
+
+		for (UINT i=0;i<arraySize;i++)
+		{
+			const eiVector& _pos = pPointArray[i];
 			mStream << "\t\t" << _pos.x << " " << _pos.y << " " << _pos.z << endl;
 		}
 	}
@@ -426,7 +508,7 @@ bool EssWriter::Initialize(const char* filename, const bool encoding)
 	}
 	
 	mStream << "# ESS generated by esswriter" << endl <<endl;
-	mStream << "link " << STR_WRAP(L"liber_shader") << endl;
+	mStream << "link " << ("liber_shader") << endl;
 	mBinartyEncoding = encoding;
 	return true;
 }

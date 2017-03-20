@@ -26,12 +26,16 @@
 //#define ESSLIB_API __declspec(dllimport)
 //#endif
 
+#ifndef ESS_LIB_H
+#define ESS_LIB_H
+
 #pragma once
 
 #include <vector>
-#include <eiVector.h>
+#include <string>
 #include "esswriter.h"
 #include "ElaraHomeAPI.h"
+
 
 class EssExporter {
 	std::vector<std::string> mElInstances;
@@ -51,14 +55,19 @@ public:
 	~EssExporter();
 	bool BeginExport(std::string &filename, const bool encoding, const bool check_normal);
 	void SetLightSamples(const int samples);
-	bool AddCamera(EH_Camera &cam, bool panorama, int panorama_size);
-	bool AddMesh(EH_Mesh& model, const std::string &modelName) ;
-	bool AddLight(EH_Light& light, std::string &lightName);
-	bool AddMaterial(EH_Material& mat, std::string &matName);
+	bool AddCamera(const EH_Camera &cam, bool panorama, int panorama_size);
+	void AddMesh(const EH_Mesh& model, const std::string &modelName);
+	void AddMeshInstance(const char *instName, const EH_MeshInstance &meshInst);
+	bool AddLight(const EH_Light& light, std::string &lightName);
+	bool AddMaterial(const EH_Material& mat, std::string &matName);
 	void AddDefaultOption();
 	bool AddDefaultMaterial();
 	bool AddBackground(const float intensity, const float haze, const eiVector &sun_dir, const bool use_sky, const std::string &hdri_name, const float rotation, const float hdri_intensity);
 	bool AddSun(const eiVector &dir, const float intensity, const eiVector &sky_color, const float hardness);
+	void AddSky(const std::string hdri_name, float rotation, float intensity);
 	void SetTexPath(std::string &path);
+	void AddAssemblyInstance(const char *name, const EH_AssemblyInstance &assembly_inst);
 	void EndExport();
 };
+
+#endif

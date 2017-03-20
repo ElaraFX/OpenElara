@@ -20,19 +20,21 @@
 
 #ifdef _WIN32
 	#include <Windows.h>
+	#include <shellapi.h>
 #endif
 
 #include "esslib.h"
 
-EH_API char * EH_utf16_to_utf8(const wchar_t *str)
+char * EH_utf16_to_utf8(const wchar_t *str)
 {
-	std::string utf8;
+	/*std::string utf8;
 	utf8.resize(WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL));
 	WideCharToMultiByte(CP_UTF8, 0, str, -1, &utf8[0], (int)utf8.size(), NULL, NULL);
-	return utf8;
+	return utf8.c_str();*/
+	return NULL;
 }
 
-EH_API void EH_convert_native_arguments(int argc, const char *argv[])
+void EH_convert_native_arguments(int argc, const char *argv[])
 {
 #ifdef _WIN32
 	// Windows only, standard main() entry point does not accept unicode file
@@ -41,6 +43,7 @@ EH_API void EH_convert_native_arguments(int argc, const char *argv[])
 		return;
 
 	int native_argc;
+	std::vector<std::string> argvList;
 	wchar_t **native_argv = CommandLineToArgvW(GetCommandLineW(), &native_argc);
 
 	if (!native_argv || native_argc != argc)
@@ -56,24 +59,24 @@ EH_API void EH_convert_native_arguments(int argc, const char *argv[])
 #endif
 }
 
-EH_API EH_Context * EH_create()
+EH_Context * EH_create()
 {
 	return (EH_Context*)new EssExporter();
 }
 
-EH_API void EH_delete(EH_Context *ctx)
+void EH_delete(EH_Context *ctx)
 {
 	delete ctx;
 }
 
-EH_API void EH_begin_export(EH_Context *ctx, const char *filename, const EH_ExportOptions *opt)
+void EH_begin_export(EH_Context *ctx, const char *filename, const EH_ExportOptions *opt)
 {
-	dynamic_cast<EssExporter*>(ctx)->BeginExport(filename, opt->base85_encoding, false);
+	reinterpret_cast<EssExporter*>(ctx)->BeginExport(std::string(filename), opt->base85_encoding, false);
 }
 
-EH_API void EH_end_export()
+void EH_end_export(EH_Context *ctx)
 {
-	dynamic_cast<EssExporter*>(ctx)->EndExport();
+	reinterpret_cast<EssExporter*>(ctx)->EndExport();
 }
 
 void EH_set_log_callback(EH_Context *ctx, EH_LogCallback cb)
@@ -86,12 +89,12 @@ void EH_set_progress_callback(EH_Context *ctx, EH_ProgressCallback cb)
 
 }
 
-EH_API void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt)
+void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt)
 {
 	switch(opt->quality)
 	{
 	case EH_MEDIUM:
-		dynamic_cast<EssExporter*>(ctx)->AddDefaultOption();
+		reinterpret_cast<EssExporter*>(ctx)->AddDefaultOption();
 		break;
 	default:
 		printf("Not support other options now!\n");
@@ -99,22 +102,42 @@ EH_API void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt)
 	}
 }
 
-EH_API void EH_set_camera(EH_Context *ctx, const EH_Camera *cam)
+void EH_set_camera(EH_Context *ctx, const EH_Camera *cam)
 {
-	dynamic_cast<EssExporter*>(ctx)->AddCamera(cam, false, 0);
+	reinterpret_cast<EssExporter*>(ctx)->AddCamera(*cam, false, 0);
 }
 
-EH_API void EH_add_mesh(EH_Context *ctx, const char *name, const EH_Mesh *mesh)
+void EH_add_mesh(EH_Context *ctx, const char *name, const EH_Mesh *mesh)
 {
-	dynamic_cast<EssExporter*>(ctx)->AddMesh(*mesh, name);
+	reinterpret_cast<EssExporter*>(ctx)->AddMesh(*mesh, std::string(name));
 }
 
-EH_API void EH_add_material(EH_Context *ctx, const char *name, const EH_Material *mtl)
+void EH_add_material(EH_Context *ctx, const char *name, const EH_Material *mtl)
 {
-	dynamic_cast<EssExporter*>(ctx)->AddMaterial(*mtl, name);
+	reinterpret_cast<EssExporter*>(ctx)->AddMaterial(*mtl, std::string(name));
 }
 
-EH_API void EH_add_mesh_instance(EH_Context *ctx, const char *name, const EH_MeshInstance *inst)
+void EH_add_mesh_instance(EH_Context *ctx, const char *name, const EH_MeshInstance *inst)
+{
+	reinterpret_cast<EssExporter*>(ctx)->AddMeshInstance(name, *inst);
+}
+
+void EH_add_assembly_instance(EH_Context *ctx, const char *name, const EH_AssemblyInstance *inst)
+{
+	reinterpret_cast<EssExporter*>(ctx)->AddAssemblyInstance(name, *inst);
+}
+
+void EH_add_light(EH_Context *ctx, const char *name, const EH_Light *lgt)
+{
+	reinterpret_cast<EssExporter*>(ctx)->AddLight(*lgt, std::string(name));
+}
+
+void EH_set_sky(EH_Context *ctx, const EH_Sky *sky)
+{
+	reinterpret_cast<EssExporter*>(ctx)->AddSky(sky->hdri_name, sky->hdri_rotation, sky->intensity);
+}
+
+void EH_set_sun(EH_Context *ctx, const EH_Sun *sun)
 {
 
 }

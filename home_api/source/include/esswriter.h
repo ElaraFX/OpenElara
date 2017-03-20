@@ -18,6 +18,7 @@
 
 #include <fstream>
 #include <vector>
+#include <string>
 #include <ei.h>
 
 class EssWriter
@@ -36,14 +37,18 @@ public:
 
 	void BeginNode(const char* type, const char* name);
 	void BeginNode(const char* type, const std::string& name);
+	void BeginNameSpace(const char *name);
+	void AddParseEss(const char *ess_name);
+	void EndNameSpace();
 	void LinkParam(const char* input, const std::string& shader, const char* output);
 	void AddScaler(const char* name, const float value);
 	void AddInt(const char* name, const int value);
 	void AddVector4(const char* name, const eiVector4& value);
-	void AddVector3(const char* name, const eiVector3& value);
+	void AddVector3(const char* name, const eiVector& value);
+	void AddVector2(const char* name, const eiVector2& value);
 	void AddToken(const char* name, const std::string& value);
 	void AddColor(const char* name, const eiVector4& value);
-	void AddColor(const char* name, const eiVector3& value);
+	void AddColor(const char* name, const eiVector& value);
 	void AddBool(const char* name, const bool value);
 	void AddRef(const std::string& name, const std::string& ref);
 	void AddRefGroup(const char* grouptype, std::vector<std::string>& refelements);
@@ -52,8 +57,9 @@ public:
 	void AddRenderCommand(const char* inst_group_name, const char* cam_name, const char* optio_name);
 	void AddDeclare();
 	void AddDeclare(const char* type, const char* name, const char *storage_class);
-	void AddIndexArray(const char* name, const int* pIndexArray, size_t arraySize, bool faceVarying);
+	void AddIndexArray(const char* name, const size_t* pIndexArray, size_t arraySize, bool faceVarying);
 	void AddVectorArray(const char* name, const eiVector* pVectorArray, size_t arraySize, bool faceVarying);
+	void AddVector2Array(const char* name, const eiVector2* pVectorArray, size_t arraySize);
 	void AddPointArray(const char* name, const eiVector* pVectorArray, size_t arraySize);
 	void AddCustomString(const char* string);
 	void EndNode();

@@ -46,9 +46,9 @@
 
 
 /* Data types */
-#ifndef uint_t
-#	define unsigned int uint_t;
-#endif
+//#ifndef uint_t
+	typedef unsigned int uint_t;
+//#endif
 
 typedef float EH_RGB[3];
 typedef float EH_RGBA[4];
@@ -134,7 +134,7 @@ EH_API void EH_begin_export(EH_Context *ctx, const char *filename, const EH_Expo
 /** End exporting, clean up resources only valid during 
  * the exporting process.
  */
-EH_API void EH_end_export();
+EH_API void EH_end_export(EH_Context *ctx);
 
 
 /** The callback to log messages during exporting.
@@ -354,4 +354,3 @@ struct EH_Sun
 /** Set the current sun parameters.
  */
 EH_API void EH_set_sun(EH_Context *ctx, const EH_Sun *sun);
-
