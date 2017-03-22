@@ -57,8 +57,6 @@ std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& 
 	std::string instanceName = itemID + instanceExt;
 	writer.BeginNode("instance", instanceName);
 	writer.AddRef("element",itemID);
-	//writer.AddMatrix("transform", l2r * pCam->m_matViewInverse * l2r);
-	//writer.AddMatrix("motion_transform", l2r * pCam->m_matViewInverse * l2r);
 	writer.AddMatrix("transform", *(eiMatrix*)(cam.view_to_world));
 	writer.AddMatrix("motion_transform", *(eiMatrix*)(cam.view_to_world));
 	writer.EndNode();
@@ -405,37 +403,6 @@ void TranslateLight(EssWriter& writer, const char *pTypeName, const EH_Light &li
 
 	writer.AddInt("samples", samples);
 	writer.EndNode();
-}
-
-void TranlateIESLight(EssWriter& writer, const EH_Light &light, std::string &lightName, std::string &rootPath, const int samples){
-	/*std::string filterName = lightName + "_filter";
-	std::string web_filename;
-	float intensity;
-	eiVector color;*/
-
-	/*pLight->m_property->get_property("web_filename", web_filename);
-	pLight->m_property->get_property("intensity", intensity);
-	pLight->m_property->get_property("color", color);*/
-
-	/*writer.BeginNode("std_light_filter", filterName);
-	writer.AddBool("use_near_atten", false);
-	writer.AddScaler("near_start", 140.0f);
-	writer.AddScaler("near_stop", 140.0f);
-	writer.AddBool("use_far_atten", false);
-	writer.AddScaler("far_start", 80.0f);
-	writer.AddScaler("far_stop", 200.0f);
-	writer.AddBool("use_web_dist", true);
-	writer.AddToken("web_filename", rootPath + web_filename);
-	writer.AddScaler("web_scale", 1.0f);
-	writer.AddBool("web_normalize", true);
-	writer.EndNode();
-
-	writer.BeginNode("pointlight", lightName);
-	writer.AddScaler("intensity", intensity);
-	writer.AddColor("color", color);
-	writer.AddRef("shader", filterName);
-	writer.AddInt("samples", samples);
-	writer.EndNode();*/
 }
 
 std::string AddLight(EssWriter& writer, const EH_Light& light, std::string &lightName, std::string &envName, std::string &rootPath, const int samples)

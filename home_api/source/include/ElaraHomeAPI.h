@@ -43,7 +43,7 @@
 
 #define EH_API EH_EXTERN EH_XAPI
 
-
+#include <string.h>
 
 /* Data types */
 //#ifndef uint_t
@@ -178,6 +178,17 @@ struct EH_Camera
 	uint_t image_height;
 	EH_Mat view_to_world;	/**< View to world transform matrix */
 	bool cubemap_render;	/**< Render a 6x1 cubemap? */
+
+	EH_Camera() :
+		fov(0.0f),
+		near_clip(0.0f),
+		far_clip(0.0f),
+		image_width(0),
+		image_height(0),
+		cubemap_render(false)
+	{
+		memset(view_to_world, 0, sizeof(view_to_world));
+	}
 };
 
 /** Set current camera to render.
@@ -192,10 +203,21 @@ struct EH_Mesh
 {
 	uint_t num_verts;
 	uint_t num_faces;
-	const EH_Vec *verts;
-	const EH_Vec *normals;
-	const EH_Vec2 *uvs;
-	const uint_t *face_indices;		/** Should have (num_faces * 3) indices */
+	EH_Vec *verts;
+	EH_Vec *normals;
+	EH_Vec2 *uvs;
+	uint_t *face_indices;		/** Should have (num_faces * 3) indices */
+
+	EH_Mesh() :
+		num_verts(0),
+		num_faces(0),
+		verts(NULL),
+		normals(NULL),
+		uvs(NULL),
+		face_indices(NULL)
+	{
+
+	}
 };
 
 /** Add a triangle mesh to the scene.
@@ -212,6 +234,13 @@ struct EH_Texture
 {
 	const char *filename;	/**< The image filename */
 	float repeat;			/**< The repeat scale */
+
+	EH_Texture() :
+		filename(NULL),
+		repeat(1.0f)
+	{
+
+	}
 };
 
 /** The material data for user to fill
@@ -257,6 +286,33 @@ struct EH_Material
 	EH_RGB refract_color;
 	float ior;
 	float refract_glossiness;
+
+	EH_Material() :
+		backface_cull(true),
+		diffuse_weight(0.0f),
+		roughness(0.0f),
+		backlight(0.0f),
+		specular_weight(0.0f),
+		glossiness(0.0f),
+		specular_fresnel(0.0f),
+		anisotropy(0.0f),
+		rotation(0.0f),
+		transp_weight(0.0f),
+		transp_invert_weight(false),
+		bump_weight(0.0f),
+		normal_bump(false),
+		mirror_weight(0.0f),
+		mirror_fresnel(0.0f),
+		refract_weight(0.0f),
+		refract_invert_weight(false),
+		ior(0.0f),
+		refract_glossiness(0.0f)
+	{
+		memset(&diffuse_color, 0, sizeof(diffuse_color));
+		memset(&specular_color, 0, sizeof(specular_color));
+		memset(&mirror_color, 0, sizeof(mirror_color));
+		memset(&refract_color, 0, sizeof(refract_color));
+	}
 };
 
 /** Add a material to the scene.
@@ -313,6 +369,14 @@ struct EH_Light
 									 Use size[0] as width and use size[0] as 
 									 height for quad light */
 	EH_Mat light_to_world;		/**< Light local space to world space transform */
+
+	EH_Light() :
+		ies_filename(0),
+		type(EH_LIGHT_SPHERE)
+	{
+		memset(size, 0, sizeof(EH_Vec2));
+		memset(light_to_world, 0, sizeof(light_to_world));
+	}
 };
 
 /** Add a light to the scene.
