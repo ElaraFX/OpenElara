@@ -563,7 +563,7 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	writer.AddScaler("refraction_weight", mat.refract_weight);
 	writer.AddScaler("refraction_glossiness", mat.refract_glossiness);
 	writer.AddScaler("ior", mat.ior);
-	writer.AddScaler("refraction_invert_weight", mat.refract_invert_weight);
+	//writer.AddScaler("refraction_invert_weight", mat.refract_invert_weight);
 
 	writer.AddScaler("transparency_weight", mat.transp_weight);
 	writer.AddScaler("transparency_invert_weight", mat.transp_invert_weight);
