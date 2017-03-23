@@ -139,5 +139,5 @@ void EH_set_sky(EH_Context *ctx, const EH_Sky *sky)
 
 void EH_set_sun(EH_Context *ctx, const EH_Sun *sun)
 {
-
+	reinterpret_cast<EssExporter*>(ctx)->AddSun(*sun);
 }

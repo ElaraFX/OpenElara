@@ -288,7 +288,7 @@ void EssWriter::AddMatrix(const char* name, const eiMatrix& ei_matrixrix)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tei_matrixrix " << (name) << " ";
+	mStream << "\tmatrix " << (name) << " ";
 	for (int row = 0; row < 4; ++row)
 	{
 		for (int col = 0; col < 4; ++col)

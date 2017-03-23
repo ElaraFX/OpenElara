@@ -326,20 +326,38 @@ std::string AddBackground(EssWriter& writer, float intensity, const float haze, 
 	return environmentShaderName;
 }
 
-std::string AddSun(EssWriter& writer, const eiVector &dir, const float intensity, const eiVector sun_color, const float hardness, const int samples)
+void CalDirectionFromSphereCoordinate(const eiVector2 &sphere_dir, eiVector &out_vector)
+{
+	out_vector.x = fastsin(sphere_dir.x) * fastcos(sphere_dir.y);
+	out_vector.y = fastsin(sphere_dir.x) * fastsin(sphere_dir.y);
+	out_vector.z = fastcos(sphere_dir.x);
+}
+
+void SunMatrixLookToRH(const eiVector &dir, eiMatrix &in_matrix)
+{
+	eiVector cam_up_vec = ei_vector(0, 1, 0);
+	eiVector zaxis = dir;
+	eiVector xaxis = normalize(cross(cam_up_vec, zaxis));
+	eiVector yaxis = cross(zaxis, xaxis);
+
+	in_matrix = ei_matrix(
+		xaxis.x, yaxis.x, zaxis.x, 0,
+		xaxis.y, yaxis.y, zaxis.y, 0,
+		xaxis.z, yaxis.z, zaxis.z, 0,
+		0, 0, 0, 1
+	);
+}
+
+std::string AddSun(EssWriter& writer, const eiMatrix &mat, const float intensity, const eiVector sun_color, const float hardness, const int samples)
 {
 	std::string sunName = "elara_sun";
 	writer.BeginNode("directlight", sunName);
 	writer.AddScaler("intensity", intensity);
 	writer.AddEnum("face", "both");
-	//eiVector sun_color;
-	//get_haze_driven_sky_color(sun_color, haze);
 	writer.AddColor("color", sun_color);
 	writer.AddScaler("hardness", hardness);
 	writer.AddInt("samples", samples);
 	writer.EndNode();
-
-	eiMatrix mat;
 
 	std::string instanceName = sunName + "_instance";
 	writer.BeginNode("instance", instanceName);
@@ -534,6 +552,22 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	}
 	if(mat.transp_tex.filename != 0)writer.LinkParam("transparency_weight", mat.transp_tex.filename, "result");
 
+	writer.AddScaler("diffuse_weight", mat.diffuse_weight);
+	writer.AddScaler("roughness", mat.roughness);
+
+	writer.AddScaler("specular_weight", mat.specular_weight);
+	writer.AddScaler("glossiness", mat.glossiness);
+	writer.AddScaler("fresnel_ior_glossy", mat.specular_fresnel);
+	writer.AddScaler("anisotropy", mat.anisotropy);
+
+	writer.AddScaler("refraction_weight", mat.refract_weight);
+	writer.AddScaler("refraction_glossiness", mat.refract_glossiness);
+	writer.AddScaler("ior", mat.ior);
+	writer.AddScaler("refraction_invert_weight", mat.refract_invert_weight);
+
+	writer.AddScaler("transparency_weight", mat.transp_weight);
+	writer.AddScaler("transparency_invert_weight", mat.transp_invert_weight);
+
 	writer.EndNode();
 	return matName;
 }
@@ -573,10 +607,19 @@ bool EssExporter::AddBackground(float intensity, const float haze, const eiVecto
 	return true;
 }
 
-bool EssExporter::AddSun(const eiVector &dir, const float intensity, const eiVector &sun_color, const float hardness)
+bool EssExporter::AddSun(const EH_Sun &sun)
 {
-	if (intensity == 0)return true;
-	std::string sunName = ::AddSun(mWriter, dir, intensity, sun_color, hardness, mLightSamples);
+	if (sun.intensity == 0)return true;
+	eiMatrix sun_mat;
+	eiVector sun_dir;
+	eiVector suncolor;
+	suncolor.x = sun.color[0];
+	suncolor.y = sun.color[1];
+	suncolor.z = sun.color[2];
+	eiVector2 sun_sphere_coord = ei_vector2(sun.dir[0], sun.dir[1]);
+	CalDirectionFromSphereCoordinate(sun_sphere_coord, sun_dir);
+	SunMatrixLookToRH(sun_dir, sun_mat);
+	std::string sunName = ::AddSun(mWriter, sun_mat, sun.intensity, suncolor, sun.soft_shadow, mLightSamples);
 	mElInstances.push_back(sunName);
 	return true;
 }

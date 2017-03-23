@@ -275,7 +275,7 @@ struct EH_Material
 	EH_Texture bump_tex;		/**< The texture for bump mapping */
 	bool normal_bump;			/**< The bump texture is actually a normal map? */
 
-	/* Mirror layer */
+	/* Mirror layer */			/**< Mirror not used */
 	float mirror_weight;
 	EH_RGB mirror_color;
 	float mirror_fresnel;
@@ -295,7 +295,7 @@ struct EH_Material
 		specular_weight(0.0f),
 		glossiness(0.0f),
 		specular_fresnel(0.0f),
-		anisotropy(0.0f),
+		anisotropy(1.0f),
 		rotation(0.0f),
 		transp_weight(0.0f),
 		transp_invert_weight(false),
@@ -305,7 +305,7 @@ struct EH_Material
 		mirror_fresnel(0.0f),
 		refract_weight(0.0f),
 		refract_invert_weight(false),
-		ior(0.0f),
+		ior(1.5f),
 		refract_glossiness(0.0f)
 	{
 		memset(&diffuse_color, 0, sizeof(diffuse_color));
