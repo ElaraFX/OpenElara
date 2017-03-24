@@ -371,7 +371,10 @@ std::string AddSun(EssWriter& writer, const eiMatrix &mat, const float intensity
 	return instanceName;
 }
 
-EssExporter::EssExporter(void)
+EssExporter::EssExporter(void) :
+	display_callback(NULL),
+	progress_callback(NULL),
+	log_callback(NULL)
 {
 	mLightSamples = 16;
 }

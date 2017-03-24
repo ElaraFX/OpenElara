@@ -420,3 +420,15 @@ struct EH_Sun
 /** Set the current sun parameters.
  */
 EH_API void EH_set_sun(EH_Context *ctx, const EH_Sun *sun);
+
+/** The callback to color buffer during rendering.
+ */
+typedef void (*EH_display_callback)(uint_t width, uint_t height, const EH_RGBA *color_data);
+
+/** Set display callback
+ */
+EH_API void EH_set_display_callback(EH_Context *ctx, EH_display_callback cb);
+
+/** Start rendering
+*/
+EH_API bool EH_start_render(EH_Context *ctx, const char *ess_name, bool is_interactive);

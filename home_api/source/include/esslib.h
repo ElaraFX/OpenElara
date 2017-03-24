@@ -38,6 +38,7 @@
 
 
 class EssExporter {
+private:
 	std::vector<std::string> mElInstances;
 	std::vector<std::string> mElMaterials;
 	std::string mCamName;
@@ -49,6 +50,11 @@ class EssExporter {
 	EssWriter mWriter;
 	int mLightSamples;
 	bool mCheckNormal;
+
+public:
+	EH_display_callback display_callback;
+	EH_ProgressCallback progress_callback;
+	EH_LogCallback log_callback;
 	
 public:
 	EssExporter(void);
