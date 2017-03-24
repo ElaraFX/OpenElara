@@ -468,7 +468,7 @@ std::string AddLight(EssWriter& writer, const EH_Light& light, std::string &ligh
 	return instanceName;
 }
 
-std::string AddTexture(EssWriter& writer, const std::string &texPath, const float repeat, const std::string &texName, const std::string &rootPath){
+std::string AddTexture(EssWriter& writer, const std::string texPath, const float repeat, const std::string texName, const std::string rootPath){
 	if(texPath.empty())return "";
 
 	std::string uvgenName = texName + "_uvgen";
@@ -526,6 +526,7 @@ std::string AddAlphaTexture(EssWriter& writer, const std::string &texPath, const
 }
 
 std::string AddNormalBump(EssWriter& writer, const std::string &normalMap){
+	if(normalMap.empty()) return "";
 	std::string normalName = normalMap + "_normal";
 	writer.BeginNode("max_normal_bump", normalName);
 	writer.LinkParam("tex_normal_map", normalMap, "result");
@@ -536,21 +537,40 @@ std::string AddNormalBump(EssWriter& writer, const std::string &normalMap){
 std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &matName, const std::string &rootPath)
 {
 	float eps = 0.0000001;
-	std::string transparencyTex = mat.transp_weight > eps ? AddAlphaTexture(writer, mat.transp_tex.filename, mat.transp_tex.repeat, matName + "_a", rootPath): "";
-
-	writer.BeginNode("max_ei_standard", matName);
-
-	if(mat.diffuse_tex.filename != 0){
-		writer.AddScaler("diffuse_color_alpha", 0);
-		writer.LinkParam("diffuse_color", mat.diffuse_tex.filename, "result");
+	std::string transparencyTex, diffuse_tex_node, normal_map_tex_node;
+	transparencyTex = mat.transp_weight > eps ? AddAlphaTexture(writer, mat.transp_tex.filename, mat.transp_tex.repeat, matName + "_a", rootPath): "";
+	if(mat.diffuse_tex.filename)
+	{
+		diffuse_tex_node = AddTexture(writer, mat.diffuse_tex.filename, mat.diffuse_tex.repeat, matName + "_d", rootPath);
+	}	
+	if(mat.bump_tex.filename)
+	{
+		std::string normal_map_tex_node = AddNormalBump(writer, mat.bump_tex.filename);	
 	}
-	if(mat.bump_tex.filename != 0)writer.LinkParam("bump_map_bump", mat.bump_tex.filename, "result_bump");
+
+	std::string ei_standard_node = matName + "_ei_stn";
+	writer.BeginNode("max_ei_standard", ei_standard_node);
+
+	if(mat.diffuse_tex.filename != 0){		
+		writer.AddScaler("diffuse_color_alpha", 0);
+		writer.LinkParam("diffuse_color", diffuse_tex_node, "result");
+	}
+	else
+	{
+		eiVector color = ei_vector(mat.diffuse_color[0], mat.diffuse_color[1], mat.diffuse_color[2]);
+		writer.AddVector3("diffuse_color", color);
+	}
+	if(mat.bump_tex.filename != 0)
+	{		
+		writer.LinkParam("bump_map_bump", normal_map_tex_node, "result_bump");
+	}
 	if(mat.specular_tex.filename != 0)
 	{
-		writer.AddScaler("specular_color_alpha", 0);
-		writer.LinkParam("specular_color", mat.specular_tex.filename, "result");
+		//writer.AddScaler("specular_color_alpha", 0);
+		//writer.LinkParam("specular_color", mat.specular_tex.filename, "result");
+		printf("not support specular texture now !\n");
 	}
-	if(mat.transp_tex.filename != 0)writer.LinkParam("transparency_weight", mat.transp_tex.filename, "result");
+	if(mat.transp_tex.filename != 0)writer.LinkParam("transparency_weight", transparencyTex, "result");
 
 	writer.AddScaler("diffuse_weight", mat.diffuse_weight);
 	writer.AddScaler("roughness", mat.roughness);
@@ -569,6 +589,23 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	writer.AddScaler("transparency_invert_weight", mat.transp_invert_weight);
 
 	writer.EndNode();
+
+	std::string result_node = matName + "_result";
+	writer.BeginNode("max_result", result_node);
+	writer.LinkParam("input", ei_standard_node, "result");
+	writer.EndNode();
+
+	std::string mat_link_name = matName + "_osl";
+	std::vector<std::string> shaderNames;
+	shaderNames.push_back(result_node);
+	writer.BeginNode("osl_shadergroup", mat_link_name);
+	writer.AddRefGroup("nodes", shaderNames);
+	writer.EndNode();
+	
+	writer.BeginNode("material", matName);
+	writer.AddRef("surface_shader", mat_link_name);
+	writer.EndNode();
+
 	return matName;
 }
 
@@ -663,7 +700,7 @@ void EssExporter::AddMesh(const EH_Mesh& model, const std::string &modelName)
 {
 	mWriter.BeginNode("poly", modelName.c_str());
 	mWriter.AddPointArray("pos_list", (eiVector*)model.verts, model.num_verts);
-	mWriter.AddIndexArray("triangle_list", (size_t*)model.face_indices, model.num_faces * 3, false);
+	mWriter.AddIndexArray("triangle_list", (uint_t*)model.face_indices, model.num_faces * 3, false);
 	mWriter.AddDeclare( "vector2[]", "uv0", "varying" );
 	mWriter.AddVector2Array("uv0", (eiVector2*)model.uvs, model.num_verts);
 	mWriter.EndNode();

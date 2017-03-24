@@ -57,7 +57,7 @@ public:
 	void AddRenderCommand(const char* inst_group_name, const char* cam_name, const char* optio_name);
 	void AddDeclare();
 	void AddDeclare(const char* type, const char* name, const char *storage_class);
-	void AddIndexArray(const char* name, const size_t* pIndexArray, size_t arraySize, bool faceVarying);
+	void AddIndexArray(const char* name, const unsigned int* pIndexArray, size_t arraySize, bool faceVarying);
 	void AddVectorArray(const char* name, const eiVector* pVectorArray, size_t arraySize, bool faceVarying);
 	void AddVector2Array(const char* name, const eiVector2* pVectorArray, size_t arraySize);
 	void AddPointArray(const char* name, const eiVector* pVectorArray, size_t arraySize);

@@ -179,12 +179,12 @@ void EssWriter::BeginNode(const char* type, const char* name)
 
 void EssWriter::BeginNameSpace(const char *name)
 {
-	mStream << "namespace " << name << endl;
+	mStream << "namespace " << "\"" << name << "\"" << endl;
 }
 
 void EssWriter::AddParseEss(const char *ess_name)
 {
-	mStream << "\tparse2 " << ess_name << " on" << endl;
+	mStream << "\tparse2 " << "\"" << ess_name << "\"" << " on" << endl;
 }
 
 void EssWriter::EndNameSpace()
@@ -196,7 +196,7 @@ void EssWriter::LinkParam(const char* input, const string& shader, const char* o
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\tparam_link " << (input) << " " << (shader) << " " << (output) << endl;
+	mStream << "\tparam_link " << "\"" << (input) << "\"" << " " << "\"" << (shader) << "\"" << " " << "\"" << (output) << "\"" << endl;
 }
 
 
@@ -325,7 +325,7 @@ void EssWriter::AddDeclare(const char* type, const char* name, const char *stora
 	mStream << "\tdeclare " << type << " " << "\"" << (name) << "\"" << " " << storage_class << endl;
 }
 
-void EssWriter::AddIndexArray(const char* name, const size_t* pIndexArray, size_t arraySize, bool faceVarying)
+void EssWriter::AddIndexArray(const char* name, const unsigned int* pIndexArray, size_t arraySize, bool faceVarying)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
@@ -360,7 +360,7 @@ void EssWriter::AddIndexArray(const char* name, const size_t* pIndexArray, size_
 
 		for (UINT i=0;i<arraySize;i++)
 		{
-			INT _index(pIndexArray[i]);
+			const unsigned int _index = pIndexArray[i];
 
 			if (i%16 == 0)
 			{
