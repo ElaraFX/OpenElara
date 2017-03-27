@@ -289,7 +289,7 @@ struct EH_Material
 
 	EH_Material() :
 		backface_cull(true),
-		diffuse_weight(0.0f),
+		diffuse_weight(1.0f),
 		roughness(0.0f),
 		backlight(0.0f),
 		specular_weight(0.0f),
