@@ -136,7 +136,7 @@ int main()
 	//EH_set_display_callback(pContext, (EH_display_callback)test_display_cb);
 	//EH_start_render(pContext, "default.ess", false);
 
-	delete pContext;
+	EH_delete(pContext);
 
 	return 0;
 }
