@@ -286,27 +286,10 @@ std::string AddHDRI(EssWriter& writer, const std::string hdri_name, float rotati
 }
 
 
-std::string AddBackground(EssWriter& writer, float intensity, const float haze, const eiVector &sun_dir, const bool use_sky, const std::string &hdri_name, const float rotation, const float hdri_intensity)
+std::string AddBackground(EssWriter& writer, const std::string &hdri_name, const float rotation, const float hdri_intensity)
 {
 	std::string sky_shader;
-	
-	if (use_sky)
-	{
-		if (intensity != 0.0f)
-		{
-			sky_shader = "sky_shader";
-			writer.BeginNode("max_vray_sky", sky_shader);
-			writer.AddScaler("intensity", intensity);
-			writer.AddScaler("sun_disk_intensity", 0.0f);
-			writer.AddScaler("tex_sun_turbidity", haze);
-			writer.AddVector3("sun_dir", sun_dir);
-			writer.EndNode();
-		}		
-	} 
-	else if(hdri_intensity != 0.0f)
-	{
-		sky_shader = AddHDRI(writer, hdri_name, rotation, hdri_intensity);
-	}
+	sky_shader = AddHDRI(writer, hdri_name, rotation, hdri_intensity);
 
 	if (sky_shader.empty())return "";
 
@@ -328,13 +311,15 @@ std::string AddBackground(EssWriter& writer, float intensity, const float haze, 
 
 void CalDirectionFromSphereCoordinate(const eiVector2 &sphere_dir, eiVector &out_vector)
 {
+	//eiScalar neg_z_theta_rad = EI_PI - sphere_dir.x;
 	out_vector.x = fastsin(sphere_dir.x) * fastcos(sphere_dir.y);
 	out_vector.y = fastsin(sphere_dir.x) * fastsin(sphere_dir.y);
 	out_vector.z = fastcos(sphere_dir.x);
 }
 
 void SunMatrixLookToRH(const eiVector &dir, eiMatrix &in_matrix)
-{
+{	
+	//printf("sun dir = (%f, %f, %f)\n", dir.x, dir.y, dir.z);
 	eiVector cam_up_vec = ei_vector(0, 1, 0);
 	eiVector zaxis = dir;
 	eiVector xaxis = normalize(cross(cam_up_vec, zaxis));
@@ -381,12 +366,19 @@ EssExporter::EssExporter(void) :
 
 EssExporter::~EssExporter()
 {
+	mElInstances.clear();
+	mElMaterials.clear();
+	mDefaultWallMatName.clear();
+	mDefaultMatName.clear();	
 
+	display_callback = NULL;
+	progress_callback = NULL;
+	log_callback = NULL;
 }
 
 bool EssExporter::BeginExport(std::string &filename, const bool encoding, const bool check_normal)
 {
-	printf("BeginExport");
+	printf("BeginExport\n");
 	mCheckNormal = check_normal;
 	return mWriter.Initialize(filename.c_str(), encoding);
 }
@@ -640,10 +632,9 @@ bool EssExporter::AddDefaultMaterial()
 	return true;
 }
 
-bool EssExporter::AddBackground(float intensity, const float haze, const eiVector &sun_dir, const bool use_sky, const std::string &hdri_name, const float rotation, const float hdri_intensity)
+bool EssExporter::AddBackground(const std::string &hdri_name, const float rotation, const float hdri_intensity)
 {
-	if (intensity == 0)return true;
-	mEnvName = ::AddBackground(mWriter, intensity, haze, sun_dir, use_sky, hdri_name, rotation, hdri_intensity);
+	mEnvName = ::AddBackground(mWriter, hdri_name, rotation, hdri_intensity);
 	return true;
 }
 
@@ -662,12 +653,6 @@ bool EssExporter::AddSun(const EH_Sun &sun)
 	std::string sunName = ::AddSun(mWriter, sun_mat, sun.intensity, suncolor, sun.soft_shadow, mLightSamples);
 	mElInstances.push_back(sunName);
 	return true;
-}
-
-void EssExporter::AddSky(const std::string hdri_name, float rotation, float intensity)
-{
-	std::string hdri_inst_name = AddHDRI(mWriter, hdri_name, rotation, intensity);
-	mElInstances.push_back(hdri_inst_name);
 }
 
 bool EssExporter::AddMaterial(const EH_Material& mat, std::string &matName)
@@ -725,7 +710,7 @@ void EssExporter::AddMeshInstance(const char *instName, const EH_MeshInstance &m
 
 void EssExporter::EndExport()
 {
-	printf("EndExport");
+	printf("EndExport\n");
 	mWriter.BeginNode("instgroup", "er_instgroup");
 	mWriter.AddRefGroup("instance_list", mElInstances);
 	mWriter.EndNode();

@@ -68,9 +68,8 @@ public:
 	bool AddMaterial(const EH_Material& mat, std::string &matName);
 	void AddDefaultOption();
 	bool AddDefaultMaterial();
-	bool AddBackground(const float intensity, const float haze, const eiVector &sun_dir, const bool use_sky, const std::string &hdri_name, const float rotation, const float hdri_intensity);
+	bool AddBackground(const std::string &hdri_name, const float rotation, const float hdri_intensity);
 	bool AddSun(const EH_Sun &sun);
-	void AddSky(const std::string hdri_name, float rotation, float intensity);
 	void SetTexPath(std::string &path);
 	void AddAssemblyInstance(const char *name, const EH_AssemblyInstance &assembly_inst);
 	void EndExport();

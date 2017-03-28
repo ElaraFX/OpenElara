@@ -58,6 +58,7 @@ struct RenderProcess
 	eiScalar					last_job_percent;
 	eiTimer						first_pixel_timer;
 	eiBool						is_first_pass;
+	EH_LogCallback              log_cb;
 
 	RenderProcess(
 		eiInt res_x, 
@@ -81,6 +82,7 @@ struct RenderProcess
 		last_job_percent = 0.0f;
 		const eiColor blackColor = ei_color(0.0f);
 		originalBuffer.resize(imageWidth * imageHeight, blackColor);
+		log_cb = NULL;
 	}
 
 	~RenderProcess()
@@ -283,6 +285,11 @@ static void rprocess_info(
 	eiProcess *process, 
 	const char *text)
 {
+	RenderProcess *rp = (RenderProcess *)process;
+	if (rp->log_cb)
+	{
+		rp->log_cb(EH_INFO, text);
+	}
 }
 
 
@@ -395,7 +402,7 @@ void EH_add_light(EH_Context *ctx, const char *name, const EH_Light *lgt)
 
 void EH_set_sky(EH_Context *ctx, const EH_Sky *sky)
 {
-	reinterpret_cast<EssExporter*>(ctx)->AddSky(sky->hdri_name, sky->hdri_rotation, sky->intensity);
+	reinterpret_cast<EssExporter*>(ctx)->AddBackground(std::string(sky->hdri_name), sky->hdri_rotation, sky->intensity);
 }
 
 void EH_set_sun(EH_Context *ctx, const EH_Sun *sun)
@@ -473,12 +480,11 @@ void EH_set_display_callback(EH_Context *ctx, EH_display_callback cb)
 }
 
 bool EH_start_render(EH_Context *ctx, const char *ess_name, bool is_interactive)
-{
+{	
 	bool ret = true;
+	ei_context();
 	if (ess_name != NULL)
-	{
-		ei_context();
-
+	{		
 		ei_info("Start parsing file: %s\n", ess_name);
 
 		if (!ei_parse2(ess_name, is_interactive))
@@ -522,6 +528,7 @@ bool EH_start_render(EH_Context *ctx, const char *ess_name, bool is_interactive)
 
 					progressive = EI_TRUE;
 					RenderProcess rp(res_x, res_y, &render_params, is_interactive, progressive);
+					rp.log_cb = reinterpret_cast<EssExporter*>(ctx)->log_callback;
 
 					if (is_interactive)
 					{
