@@ -23,6 +23,9 @@
 const char* instanceExt = "_instance";
 const char* MAX_EXPORT_ESS_DEFAULT_INST_NAME = "mtoer_instgroup_00";
 
+//left hand to right hand matrix
+const eiMatrix l2r = ei_matrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1);
+
 std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& envName, bool panorama, int panorama_size)
 {
 	//Declare camera
@@ -319,7 +322,6 @@ void CalDirectionFromSphereCoordinate(const eiVector2 &sphere_dir, eiVector &out
 
 void SunMatrixLookToRH(const eiVector &dir, eiMatrix &in_matrix)
 {	
-	//printf("sun dir = (%f, %f, %f)\n", dir.x, dir.y, dir.z);
 	eiVector cam_up_vec = ei_vector(0, 1, 0);
 	eiVector zaxis = dir;
 	eiVector xaxis = normalize(cross(cam_up_vec, zaxis));
@@ -359,7 +361,8 @@ std::string AddSun(EssWriter& writer, const eiMatrix &mat, const float intensity
 EssExporter::EssExporter(void) :
 	display_callback(NULL),
 	progress_callback(NULL),
-	log_callback(NULL)
+	log_callback(NULL),
+	mIsLeftHand(false)
 {
 	mLightSamples = 16;
 }
@@ -376,11 +379,12 @@ EssExporter::~EssExporter()
 	log_callback = NULL;
 }
 
-bool EssExporter::BeginExport(std::string &filename, const bool encoding, const bool check_normal)
+bool EssExporter::BeginExport(std::string &filename, const EH_ExportOptions &option, const bool check_normal)
 {
 	printf("BeginExport\n");
 	mCheckNormal = check_normal;
-	return mWriter.Initialize(filename.c_str(), encoding);
+	mIsLeftHand = option.left_handed;
+	return mWriter.Initialize(filename.c_str(), option.base85_encoding);
 }
 
 void EssExporter::SetTexPath(std::string &path)
@@ -546,8 +550,7 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	std::string ei_standard_node = matName + "_ei_stn";
 	writer.BeginNode("max_ei_standard", ei_standard_node);
 
-	if(mat.diffuse_tex.filename != 0){		
-		writer.AddScaler("diffuse_color_alpha", 0);
+	if(mat.diffuse_tex.filename != 0){
 		writer.LinkParam("diffuse_color", diffuse_tex_node, "result");
 	}
 	else

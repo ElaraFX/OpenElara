@@ -239,7 +239,7 @@ void EssWriter::AddToken(const char* name, const string& value)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
-	mStream << "\ttoken " << "\"" << (name) << "\"" << " " << (value) << endl;
+	mStream << "\ttoken " << "\"" << (name) << "\"" << " " << "\"" << (value) << "\"" << endl;
 }
 
 void EssWriter::AddColor(const char * name, const eiVector4& value)

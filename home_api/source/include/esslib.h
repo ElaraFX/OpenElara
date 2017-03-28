@@ -50,6 +50,7 @@ private:
 	EssWriter mWriter;
 	int mLightSamples;
 	bool mCheckNormal;
+	bool mIsLeftHand;
 
 public:
 	EH_display_callback display_callback;
@@ -59,7 +60,7 @@ public:
 public:
 	EssExporter(void);
 	~EssExporter();
-	bool BeginExport(std::string &filename, const bool encoding, const bool check_normal);
+	bool BeginExport(std::string &filename, const EH_ExportOptions &option, const bool check_normal);
 	void SetLightSamples(const int samples);
 	bool AddCamera(const EH_Camera &cam, bool panorama, int panorama_size);
 	void AddMesh(const EH_Mesh& model, const std::string &modelName);

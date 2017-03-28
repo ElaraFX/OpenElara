@@ -339,7 +339,7 @@ void EH_delete(EH_Context *ctx)
 
 void EH_begin_export(EH_Context *ctx, const char *filename, const EH_ExportOptions *opt)
 {
-	reinterpret_cast<EssExporter*>(ctx)->BeginExport(std::string(filename), opt->base85_encoding, false);
+	reinterpret_cast<EssExporter*>(ctx)->BeginExport(std::string(filename), *opt, false);
 }
 
 void EH_end_export(EH_Context *ctx)
