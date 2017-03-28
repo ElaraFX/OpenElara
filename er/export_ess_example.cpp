@@ -28,7 +28,7 @@ int main()
 	EH_Context *pContext = EH_create();
 	EH_ExportOptions option;
 	option.base85_encoding = false;
-	option.left_handed = true;
+	option.left_handed = false;
 	EH_begin_export(pContext, "test.ess", &option);
 
 	/**< 设置渲染参数 */
