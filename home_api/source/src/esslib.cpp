@@ -26,7 +26,7 @@ const char* MAX_EXPORT_ESS_DEFAULT_INST_NAME = "mtoer_instgroup_00";
 //left hand to right hand matrix
 const eiMatrix l2r = ei_matrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1);
 
-std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& envName, bool panorama, int panorama_size)
+std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& envName, bool panorama, int panorama_size, bool is_lefthand)
 {
 	//Declare camera
 	std::string itemID = "Camera_";
@@ -60,7 +60,12 @@ std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& 
 	std::string instanceName = itemID + instanceExt;
 	writer.BeginNode("instance", instanceName);
 	writer.AddRef("element",itemID);
-	writer.AddMatrix("transform", *(eiMatrix*)(cam.view_to_world));
+	eiMatrix cam_tranmat = *(eiMatrix*)(cam.view_to_world);
+	if (is_lefthand)
+	{
+		cam_tranmat = cam_tranmat * l2r;
+	}
+	writer.AddMatrix("transform", cam_tranmat);
 	writer.AddMatrix("motion_transform", *(eiMatrix*)(cam.view_to_world));
 	writer.EndNode();
 
@@ -615,7 +620,7 @@ inline int ClampToRange(int value, int max)
 
 bool EssExporter::AddCamera(const EH_Camera &cam, bool panorama, int panorama_size) 
 {
-	std::string instanceName = AddCameraData(mWriter, cam, mEnvName, panorama, panorama_size);
+	std::string instanceName = AddCameraData(mWriter, cam, mEnvName, panorama, panorama_size, mIsLeftHand);
 	mCamName = instanceName;
 	if (instanceName != "")
 	{
@@ -653,6 +658,10 @@ bool EssExporter::AddSun(const EH_Sun &sun)
 	eiVector2 sun_sphere_coord = ei_vector2(sun.dir[0], sun.dir[1]);
 	CalDirectionFromSphereCoordinate(sun_sphere_coord, sun_dir);
 	SunMatrixLookToRH(sun_dir, sun_mat);
+	if (mIsLeftHand)
+	{
+		sun_mat = sun_mat * l2r;
+	}
 	std::string sunName = ::AddSun(mWriter, sun_mat, sun.intensity, suncolor, sun.soft_shadow, mLightSamples);
 	mElInstances.push_back(sunName);
 	return true;
