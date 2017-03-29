@@ -556,7 +556,7 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	else
 	{
 		eiVector color = ei_vector(mat.diffuse_color[0], mat.diffuse_color[1], mat.diffuse_color[2]);
-		writer.AddVector3("diffuse_color", color);
+		writer.AddColor("diffuse_color", color);
 	}
 	if(mat.bump_tex.filename != 0)
 	{		
@@ -581,10 +581,10 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	writer.AddScaler("refraction_weight", mat.refract_weight);
 	writer.AddScaler("refraction_glossiness", mat.refract_glossiness);
 	writer.AddScaler("ior", mat.ior);
-	//writer.AddScaler("refraction_invert_weight", mat.refract_invert_weight);
+	writer.AddInt("refraction_invert_weight", mat.refract_invert_weight);
 
 	writer.AddScaler("transparency_weight", mat.transp_weight);
-	writer.AddScaler("transparency_invert_weight", mat.transp_invert_weight);
+	writer.AddInt("transparency_invert_weight", mat.transp_invert_weight);
 
 	writer.EndNode();
 
