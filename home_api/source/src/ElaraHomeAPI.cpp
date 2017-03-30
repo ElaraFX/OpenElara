@@ -651,7 +651,7 @@ bool EH_start_render(EH_Context *ctx, const char *ess_name, bool is_interactive)
 	return ret;
 }
 
-EH_API void EH_stop_render(EH_Context *ctx)
+void EH_stop_render(EH_Context *ctx)
 {
 	g_abort_render = true;
 }
