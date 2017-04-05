@@ -31,6 +31,8 @@ int main()
 	For camera space, camera direction points towards negative direction of Z axis,
 	X axis points to the right, and Y axis points up.
 	https://github.com/ElaraFX/elaradoc/wiki/Nodes
+
+	方向光和面光射灯的初始朝向也跟摄像机一样，都是面向负Z轴
 	*/
 
 	/* 输入的文件名都不支持中文 */
@@ -140,6 +142,22 @@ int main()
 	include_inst.filename = "default.ess"; /* 需要包含的ESS */
 	memcpy(include_inst.mesh_to_world, include_ess_mat.m, sizeof(include_inst.mesh_to_world));
 	EH_add_assembly_instance(pContext, "include_test_ess", &include_inst); /* include_test_ess 是ESS中节点的名字 不能重名 */
+
+	//添加portal light
+	EH_Sky sky;
+	sky.enabled = true;
+	sky.hdri_name = "test.hdr";
+	sky.hdri_rotation = false;
+	sky.intensity = 20.0f;
+	EH_set_sky(pContext, &sky);
+
+	EH_Light portal_light;
+	portal_light.type = EH_LIGHT_PORTAL;
+	portal_light.intensity = 20.0f;
+	portal_light.size[0] = 200.0f; /* width */
+	portal_light.size[1] = 200.0f; /* height */
+	memcpy(portal_light.light_to_world, inst_tran.m, sizeof(portal_light.light_to_world));
+	EH_add_light(pContext, "test_portal_light", &portal_light);
 
 	EH_end_export(pContext); /* 保存ESS文件 */
 

@@ -375,7 +375,7 @@ struct EH_Light
 	EH_Mat light_to_world;		/**< Light local space to world space transform */
 
 	EH_Light() :
-		ies_filename(0),
+		ies_filename(NULL),
 		type(EH_LIGHT_SPHERE)
 	{
 		memset(size, 0, sizeof(EH_Vec2));

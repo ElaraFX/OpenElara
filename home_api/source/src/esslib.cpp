@@ -421,6 +421,10 @@ void TranslateLight(EssWriter& writer, const char *pTypeName, const EH_Light &li
 	if (light.type == EH_LIGHT_PORTAL && !envName.empty())
 	{
 		writer.AddRef("map", envName);
+		writer.AddColor("color", ei_vector(1.0f, 1.0f, 1.0f));
+		writer.AddScaler("width", light.size[0] );
+		writer.AddScaler("height", light.size[1]);
+		writer.AddScaler("intensity", light.intensity);
 	}
 
 	writer.AddInt("samples", samples);
@@ -462,7 +466,7 @@ std::string AddLight(EssWriter& writer, const EH_Light& light, std::string &ligh
 	std::string instanceName = lightName + instanceExt;
 	writer.BeginNode("instance", lightName + instanceExt);
 	writer.AddRef("element",lightName);
-	writer.AddBool("visible_primary", false);
+	writer.AddBool("visible_primary", true); //for testing
 	writer.AddBool("cast_shadow", false); // block other lights? no!
 	writer.AddMatrix("transform", *((eiMatrix*)(light.light_to_world)));
 	writer.AddMatrix("motion_transform", *((eiMatrix*)(light.light_to_world)));
