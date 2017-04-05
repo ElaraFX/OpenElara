@@ -271,12 +271,12 @@ void EssWriter::AddRef(const string& name, const string& ref)
 	mStream << "\tref " <<  "\"" << (name) << "\"" <<" " << "\"" << (ref) << "\"" << endl;
 }
 
-void EssWriter::AddRefGroup(const char* grouptype, std::vector<string>& refelements)
+void EssWriter::AddRefGroup(const char* grouptype, const std::vector<std::string>& refelements)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();
 	mStream << "\tref[] " << "\"" << (grouptype) << "\"" << " 1" << endl;
-	for (std::vector<string>::iterator it = refelements.begin();
+	for (std::vector<std::string>::const_iterator it = refelements.begin();
 	it != refelements.end();
 	++it)
 	{

@@ -703,13 +703,24 @@ void EssExporter::AddMesh(const EH_Mesh& model, const std::string &modelName)
 	mWriter.AddIndexArray("triangle_list", (uint_t*)model.face_indices, model.num_faces * 3, false);
 	mWriter.AddDeclare( "vector2[]", "uv0", "varying" );
 	mWriter.AddVector2Array("uv0", (eiVector2*)model.uvs, model.num_verts);
+
+	if (model.mtl_indices)
+	{
+		mWriter.AddDeclare("index[]", "mtl_index", "uniform");
+		mWriter.AddIndexArray("mtl_index", model.mtl_indices, model.num_faces, false);
+	}
+
 	mWriter.EndNode();
 }
 
 void EssExporter::AddMeshInstance(const char *instName, const EH_MeshInstance &meshInst)
 {
 	std::vector<std::string> mtl_list;
-	mtl_list.push_back(meshInst.mtl_name);
+	for(std::vector<const char*>::const_iterator iter = meshInst.mtl_names.begin();
+		iter != meshInst.mtl_names.end(); ++iter)
+	{
+		mtl_list.push_back(*iter);
+	}
 	mWriter.BeginNode("instance", instName);
 	mWriter.AddRefGroup("mtl_list", mtl_list);
 	mWriter.AddRef("element", meshInst.mesh_name);

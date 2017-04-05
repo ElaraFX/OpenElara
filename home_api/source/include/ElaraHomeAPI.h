@@ -43,7 +43,7 @@
 
 #define EH_API EH_EXTERN EH_XAPI
 
-#include <string.h>
+#include <vector>
 
 /* Data types */
 //#ifndef uint_t
@@ -207,6 +207,7 @@ struct EH_Mesh
 	EH_Vec *normals;
 	EH_Vec2 *uvs;
 	uint_t *face_indices;		/** Should have (num_faces * 3) indices */
+	uint_t *mtl_indices;        /** For multiple material model. Material index on every triangle */
 
 	EH_Mesh() :
 		num_verts(0),
@@ -214,7 +215,8 @@ struct EH_Mesh
 		verts(NULL),
 		normals(NULL),
 		uvs(NULL),
-		face_indices(NULL)
+		face_indices(NULL),
+		mtl_indices(NULL)
 	{
 
 	}
@@ -329,9 +331,9 @@ EH_API void EH_add_material(EH_Context *ctx, const char *name, const EH_Material
  */
 struct EH_MeshInstance
 {
-	const char *mesh_name;	/**< The name of the mesh which we reference to */
-	EH_Mat mesh_to_world;	/**< Mesh local space to world space transform */
-	const char *mtl_name;	/**< The name of the material which we reference to */
+	const char *mesh_name;					/**< The name of the mesh which we reference to */
+	EH_Mat mesh_to_world;					/**< Mesh local space to world space transform */
+	std::vector<const char *> mtl_names;	/**< The name array of the materials which we reference to */
 };
 
 /** Instance a mesh into the scene.

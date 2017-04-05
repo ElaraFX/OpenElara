@@ -51,7 +51,7 @@ public:
 	void AddColor(const char* name, const eiVector& value);
 	void AddBool(const char* name, const bool value);
 	void AddRef(const std::string& name, const std::string& ref);
-	void AddRefGroup(const char* grouptype, std::vector<std::string>& refelements);
+	void AddRefGroup(const char* grouptype, const std::vector<std::string>& refelements);
 	void AddMatrix(const char* name, const eiMatrix& matrix);
 	void AddEnum(const char* name, const char* value);
 	void AddRenderCommand(const char* inst_group_name, const char* cam_name, const char* optio_name);
