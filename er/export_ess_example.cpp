@@ -104,17 +104,17 @@ int main()
 	/**< 创建材质 */
 	const char *simple_mtl = "simple_mtl";
 	EH_Material simple_mat;
-	float diffuse[3] = {1, 0, 0};
+	float diffuse[3] = {0, 0, 1};
 	memcpy(simple_mat.diffuse_color, diffuse, sizeof(EH_RGB));
 	EH_add_material(pContext, simple_mtl, &simple_mat);
 
 	/**< 设置方向光 */
 	EH_Sun sun;
-	sun.dir[0] = 0; /* theta */
+	sun.dir[0] = radians(45); /* theta */
 	sun.dir[1] = 0; /* phi  头文件有具体描述*/
 	float color[3] = {1, 1, 1};
 	memcpy(sun.color, color, sizeof(color));
-	sun.intensity = 3.1; /* 强度0 - (float)最大值 */
+	sun.intensity = 30.1; /* 强度0 - (float)最大值 */
 	EH_set_sun(pContext, &sun);
 
 	/**< 关联 网格信息 和 材质 */
@@ -148,23 +148,30 @@ int main()
 	sky.enabled = true;
 	sky.hdri_name = "test.hdr";
 	sky.hdri_rotation = false;
-	sky.intensity = 20.0f;
+	sky.intensity = 2.0f;
 	EH_set_sky(pContext, &sky);
 
 	EH_Light portal_light;
 	portal_light.type = EH_LIGHT_PORTAL;
-	portal_light.intensity = 20.0f;
-	portal_light.size[0] = 200.0f; /* width */
-	portal_light.size[1] = 200.0f; /* height */
-	memcpy(portal_light.light_to_world, inst_tran.m, sizeof(portal_light.light_to_world));
+	portal_light.intensity = 2.0f;
+	portal_light.size[0] = 20.0f; /* width */
+	portal_light.size[1] = 20.0f; /* height */
+	eiMatrix portal_light_tran = ei_matrix( /* portal light的变化矩阵 */
+		1, 0, 0, 0,
+		0, 0, -1, 0,
+		0, 1, 0, 0,
+		0, 30, 0, 1
+		);
+	memcpy(portal_light.light_to_world, portal_light_tran.m, sizeof(portal_light.light_to_world));
 	EH_add_light(pContext, "test_portal_light", &portal_light);
+
 
 	EH_end_export(pContext); /* 保存ESS文件 */
 
 	/**< 设置渲染时候的回调 */
-	//EH_set_progress_callback(pContext, (EH_ProgressCallback)test_get_progress_cb);
-	//EH_set_display_callback(pContext, (EH_display_callback)test_display_cb);
-	//EH_start_render(pContext, "default.ess", false);
+	EH_set_progress_callback(pContext, (EH_ProgressCallback)test_get_progress_cb);
+	EH_set_display_callback(pContext, (EH_display_callback)test_display_cb);
+	EH_start_render(pContext, "default.ess", false);
 
 	EH_delete(pContext); /* 释放内存，非必须 */
 
