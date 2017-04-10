@@ -362,7 +362,13 @@ void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt)
 	switch(opt->quality)
 	{
 	case EH_MEDIUM:
-		reinterpret_cast<EssExporter*>(ctx)->AddDefaultOption();
+		reinterpret_cast<EssExporter*>(ctx)->AddMediumOption();
+		break;
+	case EH_FAST:
+		reinterpret_cast<EssExporter*>(ctx)->AddLowOption();
+		break;
+	case EH_HIGH:
+		reinterpret_cast<EssExporter*>(ctx)->AddHighOption();
 		break;
 	default:
 		printf("Not support other options now!\n");

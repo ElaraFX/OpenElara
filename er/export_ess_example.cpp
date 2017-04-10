@@ -121,7 +121,7 @@ int main()
 	const char *simple_inst_name = "simple_inst_name";
 	EH_MeshInstance inst;
 	inst.mesh_name = mesh_name;
-	inst.mtl_names.push_back(simple_mtl);
+	inst.mtl_names[0] = simple_mtl;
 	eiMatrix inst_tran = ei_matrix( /* 关联材质网络的变化矩阵 */
 		1, 0, 0, 0,
 		0, 1, 0, 0,

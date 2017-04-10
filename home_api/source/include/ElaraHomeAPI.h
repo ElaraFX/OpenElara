@@ -50,6 +50,10 @@
 	typedef unsigned int uint_t;
 //#endif
 
+/** The max number of materials mesh contains
+*/
+const uint_t MAX_NUM_MTLS = 16;
+
 typedef float EH_RGB[3];
 typedef float EH_RGBA[4];
 typedef float EH_Vec[3];
@@ -333,7 +337,15 @@ struct EH_MeshInstance
 {
 	const char *mesh_name;					/**< The name of the mesh which we reference to */
 	EH_Mat mesh_to_world;					/**< Mesh local space to world space transform */
-	std::vector<const char *> mtl_names;	/**< The name array of the materials which we reference to */
+	const char *mtl_names[MAX_NUM_MTLS];	/**< The name array of the materials which we reference to */	
+
+	EH_MeshInstance() :
+		mesh_name(NULL)
+	{
+		memset(mesh_to_world, 0, sizeof(mesh_to_world));
+		memset(mtl_names, 0, sizeof(mtl_names));
+	}
+
 };
 
 /** Instance a mesh into the scene.

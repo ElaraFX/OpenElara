@@ -194,6 +194,105 @@ const char* AddDefaultOptions(EssWriter& writer)
 	return optName;
 }
 
+const char* AddMediumOptions(EssWriter &writer)
+{
+	static const char* optName = "GlobalMediumOption";
+	writer.BeginNode("options", optName);
+	writer.AddScaler("min_samples", -3);
+	writer.AddScaler("max_samples", 16);
+	writer.AddScaler("diffuse_samples", 16);
+	writer.AddScaler("sss_samples", 64);
+	writer.AddScaler("volume_indirect_samples", 8);
+	writer.AddScaler("light_cutoff", 0.01);
+	writer.AddScaler("GI_cache_density", 1.0);
+	writer.AddScaler("GI_cache_passes", 50);
+	writer.AddScaler("GI_cache_radius", 30);
+	writer.AddScaler("GI_cache_points", 5);
+	writer.AddBool("GI_cache_preview", false);
+	writer.AddScaler("diffuse_depth", 5);
+	writer.AddScaler("sum_depth", 10);
+	writer.AddBool("caustic", false);
+	writer.AddBool("motion", false);
+	writer.AddBool("use_clamp", false);
+	writer.AddScaler("clamp_value", 20.0f);
+	writer.AddBool("displace", false);	
+	writer.AddEnum("engine", "GI cache");
+	writer.AddBool("GI_cache_no_leak", true);
+	writer.AddScaler("display_gamma", 2.2f);
+	writer.AddScaler("texture_gamma", 2.2f);
+	writer.AddScaler("shader_gamma", 2.2f);
+	writer.AddScaler("light_gamma", 2.2f);
+	//writer.AddBool("exposure", true);
+	writer.EndNode();
+	return optName;
+}
+
+const char* AddLowOptions(EssWriter &writer)
+{
+	static const char* optName = "GlobalLowOption";
+	writer.BeginNode("options", optName);
+	writer.AddScaler("min_samples", -3);
+	writer.AddScaler("max_samples", 16);
+	writer.AddScaler("diffuse_samples", 8);
+	writer.AddScaler("sss_samples", 16);
+	writer.AddScaler("volume_indirect_samples", 8);
+	writer.AddScaler("light_cutoff", 0.01);
+	writer.AddScaler("GI_cache_density", 1.0);
+	writer.AddScaler("GI_cache_passes", 20);
+	writer.AddScaler("GI_cache_radius", 100);
+	writer.AddScaler("GI_cache_points", 10);
+	writer.AddBool("GI_cache_preview", true);
+	writer.AddScaler("diffuse_depth", 5);
+	writer.AddScaler("sum_depth", 10);
+	writer.AddBool("caustic", false);
+	writer.AddBool("motion", false);
+	writer.AddBool("use_clamp", false);
+	writer.AddScaler("clamp_value", 20.0f);
+	writer.AddBool("displace", false);	
+	writer.AddEnum("engine", "GI cache");
+	writer.AddBool("GI_cache_no_leak", true);
+	writer.AddScaler("display_gamma", 2.2f);
+	writer.AddScaler("texture_gamma", 2.2f);
+	writer.AddScaler("shader_gamma", 2.2f);
+	writer.AddScaler("light_gamma", 2.2f);
+	//writer.AddBool("exposure", true);
+	writer.EndNode();
+	return optName;
+}
+
+const char* AddHighOptions(EssWriter &writer)
+{
+	static const char* optName = "GlobalHighOption";
+	writer.BeginNode("options", optName);
+	writer.AddScaler("min_samples", -3);
+	writer.AddScaler("max_samples", 64);
+	writer.AddScaler("diffuse_samples", 64);
+	writer.AddScaler("sss_samples", 64);
+	writer.AddScaler("volume_indirect_samples", 8);
+	writer.AddScaler("light_cutoff", 0.01);
+	writer.AddScaler("GI_cache_density", 1.0);
+	writer.AddScaler("GI_cache_passes", 100);
+	writer.AddScaler("GI_cache_radius", 30);
+	writer.AddScaler("GI_cache_points", 5);
+	writer.AddBool("GI_cache_preview", false);
+	writer.AddScaler("diffuse_depth", 5);
+	writer.AddScaler("sum_depth", 10);
+	writer.AddBool("caustic", false);
+	writer.AddBool("motion", false);
+	writer.AddBool("use_clamp", false);
+	writer.AddScaler("clamp_value", 20.0f);
+	writer.AddBool("displace", false);	
+	writer.AddEnum("engine", "GI cache");
+	writer.AddBool("GI_cache_no_leak", true);
+	writer.AddScaler("display_gamma", 2.2f);
+	writer.AddScaler("texture_gamma", 2.2f);
+	writer.AddScaler("shader_gamma", 2.2f);
+	writer.AddScaler("light_gamma", 2.2f);
+	//writer.AddBool("exposure", true);
+	writer.EndNode();
+	return optName;
+}
+
 std::string AddDefaultWallMaterial(EssWriter& writer, const bool check_normal)
 {
 	std::string matName = "GlobalWallMaterial";
@@ -683,9 +782,19 @@ bool EssExporter::AddMaterial(const EH_Material& mat, std::string &matName)
 	}
 }
 
-void EssExporter::AddDefaultOption()
+void EssExporter::AddMediumOption()
 {
-	mOptionName = AddDefaultOptions(mWriter);	
+	mOptionName = AddMediumOptions(mWriter);
+}
+
+void EssExporter::AddLowOption()
+{
+	mOptionName = AddLowOptions(mWriter);
+}
+
+void EssExporter::AddHighOption()
+{
+	mOptionName = AddHighOptions(mWriter);
 }
 
 bool EssExporter::AddLight(const EH_Light& light, std::string &lightName)
@@ -720,10 +829,12 @@ void EssExporter::AddMesh(const EH_Mesh& model, const std::string &modelName)
 void EssExporter::AddMeshInstance(const char *instName, const EH_MeshInstance &meshInst)
 {
 	std::vector<std::string> mtl_list;
-	for(std::vector<const char*>::const_iterator iter = meshInst.mtl_names.begin();
-		iter != meshInst.mtl_names.end(); ++iter)
+	for(int i = 0; i < MAX_NUM_MTLS; ++i)
 	{
-		mtl_list.push_back(*iter);
+		if (meshInst.mtl_names[i])
+		{
+			mtl_list.push_back(meshInst.mtl_names[i]);
+		}		
 	}
 	mWriter.BeginNode("instance", instName);
 	mWriter.AddRefGroup("mtl_list", mtl_list);
@@ -742,7 +853,7 @@ void EssExporter::EndExport()
 	mWriter.AddRefGroup("instance_list", mElInstances);
 	mWriter.EndNode();
 
-	const char* optName = mOptionName.empty() ? AddDefaultOptions(mWriter) : mOptionName.c_str();
+	const char* optName = mOptionName.empty() ? AddMediumOptions(mWriter) : mOptionName.c_str();
 	mWriter.AddRenderCommand("er_instgroup", mCamName.c_str(), optName);
 	mWriter.Close();
 }
