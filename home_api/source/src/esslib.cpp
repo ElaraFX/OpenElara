@@ -66,7 +66,7 @@ std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& 
 		cam_tranmat = cam_tranmat * l2r;
 	}
 	writer.AddMatrix("transform", cam_tranmat);
-	writer.AddMatrix("motion_transform", *(eiMatrix*)(cam.view_to_world));
+	writer.AddMatrix("motion_transform", cam_tranmat);
 	writer.EndNode();
 
 	return instanceName;
