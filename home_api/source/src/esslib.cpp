@@ -888,6 +888,8 @@ void EssExporter::EndExport()
 	const char* optName = mOptionName.empty() ? AddMediumOptions(mWriter) : mOptionName.c_str();
 	mWriter.AddRenderCommand("er_instgroup", mCamName.c_str(), optName);
 	mWriter.Close();
+
+	mElInstances.clear();
 }
 
 void EssExporter::SetLightSamples( const int samples )
