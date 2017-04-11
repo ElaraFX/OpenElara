@@ -51,7 +51,7 @@ int main()
 		API暴露的接口中只支持投影摄像机
 	*/
 	EH_Camera cam;
-	cam.fov = 45;
+	cam.fov = radians(45);
 	cam.near_clip = 0.01f;
 	cam.far_clip = 1000.0f;
 	cam.image_width = 640;

@@ -634,9 +634,28 @@ std::string AddAlphaTexture(EssWriter& writer, const std::string &texPath, const
 
 std::string AddNormalBump(EssWriter& writer, const std::string &normalMap){
 	if(normalMap.empty()) return "";
+
+	std::string uvgenName = normalMap + "_uvgen";
+	writer.BeginNode("max_stduv", uvgenName);
+	writer.AddToken("mapChannel", "uv0");
+	writer.AddScaler("uScale", 1.0);
+	writer.AddBool("uWrap", true);
+	writer.AddScaler("vScale", 1.0);
+	writer.AddBool("vWrap", true);
+	writer.EndNode();
+
+	std::string bitmapName = normalMap + "_bitmap";
+	writer.BeginNode("max_bitmap", bitmapName);
+	writer.LinkParam("tex_coords", uvgenName, "result");
+	writer.AddToken("tex_fileName", normalMap);
+	writer.EndNode();
+
 	std::string normalName = normalMap + "_normal";
-	writer.BeginNode("max_normal_bump", normalName);
-	writer.LinkParam("tex_normal_map", normalMap, "result");
+	writer.BeginNode("max_stdout", normalName);
+	writer.LinkParam("stdout_color", normalMap, "result");
+	writer.LinkParam("stdout_alpha", normalMap, "result_alpha");
+	writer.LinkParam("stdout_bump", normalMap, "result_bump");
+	writer.LinkParam("stdout_mono", normalMap, "result_mono");
 	writer.EndNode();
 	return normalName;
 }
@@ -644,15 +663,22 @@ std::string AddNormalBump(EssWriter& writer, const std::string &normalMap){
 std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &matName, const std::string &rootPath)
 {
 	float eps = 0.0000001;
-	std::string transparencyTex, diffuse_tex_node, normal_map_tex_node;
-	transparencyTex = mat.transp_weight > eps ? AddAlphaTexture(writer, mat.transp_tex.filename, mat.transp_tex.repeat, matName + "_a", rootPath): "";
+	std::string transparent_tex_node, diffuse_tex_node, normal_map_tex_node, specular_tex_node;
 	if(mat.diffuse_tex.filename)
 	{
 		diffuse_tex_node = AddTexture(writer, mat.diffuse_tex.filename, mat.diffuse_tex.repeat, matName + "_d", rootPath);
 	}	
 	if(mat.bump_tex.filename)
 	{
-		std::string normal_map_tex_node = AddNormalBump(writer, mat.bump_tex.filename);	
+		normal_map_tex_node = AddTexture(writer, mat.bump_tex.filename, mat.bump_tex.repeat, matName + "_n", rootPath);
+	}
+	if(mat.specular_tex.filename)
+	{
+		specular_tex_node = AddTexture(writer, mat.specular_tex.filename, mat.specular_tex.repeat, matName + "_s", rootPath);
+	}
+	if(mat.transp_tex.filename)
+	{
+		transparent_tex_node = AddTexture(writer, mat.transp_tex.filename, mat.transp_tex.repeat, matName + "_t", rootPath);
 	}
 
 	std::string ei_standard_node = matName + "_ei_stn";
@@ -667,16 +693,22 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 		writer.AddColor("diffuse_color", color);
 	}
 	if(mat.bump_tex.filename != 0)
-	{		
-		writer.LinkParam("bump_map_bump", normal_map_tex_node, "result_bump");
+	{
+		writer.LinkParam("bump_map", normal_map_tex_node, "result");
 	}
 	if(mat.specular_tex.filename != 0)
 	{
-		//writer.AddScaler("specular_color_alpha", 0);
-		//writer.LinkParam("specular_color", mat.specular_tex.filename, "result");
-		printf("not support specular texture now !\n");
+		writer.LinkParam("specular_color_map", specular_tex_node, "result");
 	}
-	if(mat.transp_tex.filename != 0)writer.LinkParam("transparency_weight", transparencyTex, "result");
+	else
+	{
+		eiVector color = ei_vector(mat.specular_color[0], mat.specular_color[1], mat.specular_color[2]);
+		writer.AddColor("specular_color", color);
+	}
+	if(mat.transp_tex.filename != 0)
+	{
+		writer.LinkParam("transparency_color_map", transparent_tex_node, "result");
+	}
 
 	writer.AddScaler("diffuse_weight", mat.diffuse_weight);
 	writer.AddScaler("roughness", mat.roughness);

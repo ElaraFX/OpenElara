@@ -175,7 +175,7 @@ EH_API void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt);
  */
 struct EH_Camera
 {
-	float fov;
+	float fov;              /**< Field of view in the horizontal direction, in radians. */
 	float near_clip;
 	float far_clip;
 	uint_t image_width;
@@ -436,7 +436,7 @@ struct EH_Sun
 EH_API void EH_set_sun(EH_Context *ctx, const EH_Sun *sun);
 
 /** The callback to color buffer during rendering.
-	For users to better to deal with color such as exposure, HDR and so on,
+	For users to better to deal with color such as exposure, tone mapping and so on,
 	color_data in callback WON'T clamp to range of [0,1].
 	MUST CLAMP the color_data to range of [0,1] WHEN SHOW the pixels.
  */
