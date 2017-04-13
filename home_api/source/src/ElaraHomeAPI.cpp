@@ -437,7 +437,7 @@ bool WindowProcOnRendering(void *param, bool is_abort_render, EH_display_callbac
 
 	if (is_abort_render)
 	{
-		ei_job_abort(EI_TRUE);
+		//ei_job_abort(EI_TRUE);
 		return false;
 	}
 
@@ -660,4 +660,5 @@ bool EH_start_render(EH_Context *ctx, const char *ess_name, bool is_interactive)
 void EH_stop_render(EH_Context *ctx)
 {
 	g_abort_render = true;
+	ei_job_abort(EI_TRUE);
 }
