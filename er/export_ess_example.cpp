@@ -47,6 +47,18 @@ int main()
 	render_op.quality = EH_MEDIUM; /**< 中等渲染品质，ElaraHomeAPI头文件里面有定义品质 */
 	EH_set_render_options(pContext, &render_op);
 
+	/**< 设置天空环境
+		这一步如果在设置摄像机和portal light之前，
+		摄像机会拥有类似天空盒的环境，
+		portal light采样的光照信息也会来源于设置的HDR
+	*/
+	EH_Sky sky;
+	sky.enabled = true;
+	sky.hdri_name = "test.hdr";
+	sky.hdri_rotation = false;
+	sky.intensity = 2.0f;
+	EH_set_sky(pContext, &sky);
+
 	/**< 创建摄像机
 		API暴露的接口中只支持投影摄像机
 	*/
@@ -110,11 +122,11 @@ int main()
 
 	/**< 设置方向光 */
 	EH_Sun sun;
-	sun.dir[0] = radians(45); /* theta */
-	sun.dir[1] = 0; /* phi  头文件有具体描述*/
+	sun.dir[0] = radians(75); /* theta */
+	sun.dir[1] = radians(46); /* phi  头文件有具体描述*/
 	float color[3] = {1, 1, 1};
 	memcpy(sun.color, color, sizeof(color));
-	sun.intensity = 30.1; /* 强度0 - (float)最大值 */
+	sun.intensity = 3.14; /* 强度0 - (float)最大值 */
 	EH_set_sun(pContext, &sun);
 
 	/**< 关联 网格信息 和 材质 */
@@ -136,21 +148,14 @@ int main()
 		1, 0, 0, 0,
 		0, 1, 0, 0,
 		0, 0, 1, 0,
-		0, 200, -10, 1
+		0, 0, 0, 1
 		);
 	EH_AssemblyInstance include_inst;
-	include_inst.filename = "default.ess"; /* 需要包含的ESS */
+	include_inst.filename = "base.ess"; /* 需要包含的ESS */
 	memcpy(include_inst.mesh_to_world, include_ess_mat.m, sizeof(include_inst.mesh_to_world));
 	EH_add_assembly_instance(pContext, "include_test_ess", &include_inst); /* include_test_ess 是ESS中节点的名字 不能重名 */
 
 	//添加portal light
-	EH_Sky sky;
-	sky.enabled = true;
-	sky.hdri_name = "test.hdr";
-	sky.hdri_rotation = false;
-	sky.intensity = 2.0f;
-	EH_set_sky(pContext, &sky);
-
 	EH_Light portal_light;
 	portal_light.type = EH_LIGHT_PORTAL;
 	portal_light.intensity = 2.0f;
@@ -171,7 +176,7 @@ int main()
 	/**< 设置渲染时候的回调 */
 	EH_set_progress_callback(pContext, (EH_ProgressCallback)test_get_progress_cb);
 	EH_set_display_callback(pContext, (EH_display_callback)test_display_cb);
-	EH_start_render(pContext, "default.ess", false);
+	EH_start_render(pContext, "test.ess", false);
 
 	EH_delete(pContext); /* 释放内存，非必须 */
 

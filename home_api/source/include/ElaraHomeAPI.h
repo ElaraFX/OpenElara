@@ -426,7 +426,7 @@ struct EH_Sun
 	bool enabled;
 	float intensity;
 	EH_RGB color;
-	float soft_shadow;
+	float soft_shadow;		/**< range is [0, 1.0) */
 	EH_Vec2 dir;			/**< dir[0] is theta angle, 
 							     dir[1] is phi angle, both in radians */
 };
