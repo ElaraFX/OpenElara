@@ -127,6 +127,7 @@ int main()
 	float color[3] = {1, 1, 1};
 	memcpy(sun.color, color, sizeof(color));
 	sun.intensity = 3.14; /* 强度0 - (float)最大值 */
+	sun.soft_shadow = 50.0f;
 	EH_set_sun(pContext, &sun);
 
 	/**< 关联 网格信息 和 材质 */

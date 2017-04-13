@@ -797,7 +797,11 @@ bool EssExporter::AddSun(const EH_Sun &sun)
 	{
 		sun_mat = sun_mat * l2r;
 	}
-	std::string sunName = ::AddSun(mWriter, sun_mat, sun.intensity, suncolor, sun.soft_shadow, mLightSamples);
+
+	double sun_size = 695500.0 * sun.soft_shadow;
+	double sun_dist = 149597870.0;
+	float hardness = cos(asin(sun_size / (sun_dist + sun_size)));
+	std::string sunName = ::AddSun(mWriter, sun_mat, sun.intensity, suncolor, hardness, mLightSamples);
 	mElInstances.push_back(sunName);
 	return true;
 }
