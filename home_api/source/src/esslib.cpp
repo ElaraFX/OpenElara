@@ -554,26 +554,47 @@ void TranslateLight(EssWriter& writer, const char *pTypeName, const EH_Light &li
 	writer.EndNode();
 }
 
+void TranslateIES(EssWriter& writer, const EH_Light &light, const std::string &lightName, const std::string &envName, const int samples)
+{
+	std::string filterName = lightName + "_filter";
+	std::string web_filename = light.ies_filename;	
+	eiVector color = ei_vector(1.0, 1.0, 1.0);
+
+	writer.BeginNode("std_light_filter", filterName);
+		writer.AddBool("use_near_atten", false);
+		writer.AddScaler("near_start", 140.0f);
+		writer.AddScaler("near_stop", 140.0f);
+		writer.AddBool("use_far_atten", false);
+		writer.AddScaler("far_start", 80.0f);
+		writer.AddScaler("far_stop", 200.0f);
+		writer.AddBool("use_web_dist", true);
+		writer.AddToken("web_filename", web_filename);
+		writer.AddScaler("web_scale", 1.0f);
+		writer.AddBool("web_normalize", true);
+	writer.EndNode();
+
+	writer.BeginNode("pointlight", lightName);
+		writer.AddScaler("intensity", light.intensity);
+		writer.AddColor("color", color);
+		writer.AddRef("shader", filterName);
+		writer.AddInt("samples", samples);
+	writer.EndNode();
+}
+
 std::string AddLight(EssWriter& writer, const EH_Light& light, std::string &lightName, std::string &envName, std::string &rootPath, const int samples)
 {
 	std::string itemID = lightName;
 	switch (light.type)
-	{	
-	//case LT_Target:
-		//TranslateLight(writer, "spotlight", light, lightName, envName, samples);
-		//break;
-	//case LT_Distant:
-		//TranslateLight(writer, "directlight", light, lightName, envName, samples);
-		//break;
+	{		
 	case EH_LIGHT_PORTAL:
 		TranslateLight(writer, "portallight", light, lightName, envName, samples);		
 		break;
 	case EH_LIGHT_QUAD:
 		TranslateLight(writer, "quadlight", light, lightName, envName, samples);
 		break;
-	//case LT_Standard:
-		//TranlateIESLight(writer, light, lightName, rootPath, 1);
-		//break;
+	case EH_LIGHT_IES:
+		TranslateIES(writer, light, lightName, envName, samples);
+		break;
 	case EH_LIGHT_SPHERE:
 		TranslateLight(writer, "spherelight", light, lightName, envName, samples);
 		break;
