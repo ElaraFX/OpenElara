@@ -295,10 +295,16 @@ static void rprocess_info(
 
 char * EH_utf16_to_utf8(const wchar_t *str)
 {
-	/*std::string utf8;
+#ifdef _WIN32
+	std::string utf8;
 	utf8.resize(WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL));
 	WideCharToMultiByte(CP_UTF8, 0, str, -1, &utf8[0], (int)utf8.size(), NULL, NULL);
-	return utf8.c_str();*/
+	const int buffer_size = utf8.size() + 1;
+	char *ret_str = new char[buffer_size];
+	memset(ret_str, 0, sizeof(ret_str));
+	memcpy(ret_str, utf8.c_str(), buffer_size);
+	return ret_str;
+#endif
 	return NULL;
 }
 
