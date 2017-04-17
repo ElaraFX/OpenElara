@@ -517,12 +517,36 @@ void EssExporter::AddAssemblyInstance(const char *name, const EH_AssemblyInstanc
 void TranslateLight(EssWriter& writer, const char *pTypeName, const EH_Light &light, const std::string &lightName, const std::string &envName, const int samples){
 	writer.BeginNode(pTypeName, lightName);
 
-	if (light.type == EH_LIGHT_PORTAL && !envName.empty())
+	const eiVector light_default_color = ei_vector(1.0f, 1.0f, 1.0f);
+	if (light.type == EH_LIGHT_PORTAL)
 	{
-		writer.AddRef("map", envName);
-		writer.AddColor("color", ei_vector(1.0f, 1.0f, 1.0f));
+		if (!envName.empty())
+		{
+			writer.AddRef("map", envName);
+		}		
+		writer.AddColor("color", light_default_color);
 		writer.AddScaler("width", light.size[0] );
 		writer.AddScaler("height", light.size[1]);
+		writer.AddScaler("intensity", light.intensity);
+	}
+	else if (light.type == EH_LIGHT_SPHERE)
+	{
+		if (!envName.empty())
+		{
+			writer.AddRef("map", envName);
+		}
+		writer.AddColor("color", light_default_color);
+		writer.AddScaler("intensity", light.intensity);
+	}
+	else if (light.type == EH_LIGHT_QUAD)
+	{
+		if (!envName.empty())
+		{
+			writer.AddRef("map", envName);
+		}
+		writer.AddScaler("width", light.size[0] );
+		writer.AddScaler("height", light.size[1]);
+		writer.AddColor("color", light_default_color);
 		writer.AddScaler("intensity", light.intensity);
 	}
 
@@ -534,10 +558,7 @@ std::string AddLight(EssWriter& writer, const EH_Light& light, std::string &ligh
 {
 	std::string itemID = lightName;
 	switch (light.type)
-	{
-	//case EH_LIGHT_SPHERE:
-		//TranslateLight(writer, "pointlight", light, lightName, envName, 1);
-		//break;
+	{	
 	//case LT_Target:
 		//TranslateLight(writer, "spotlight", light, lightName, envName, samples);
 		//break;
