@@ -340,7 +340,7 @@ EH_Context * EH_create()
 
 void EH_delete(EH_Context *ctx)
 {
-	delete ctx;
+	delete reinterpret_cast<EssExporter*>(ctx);
 }
 
 void EH_begin_export(EH_Context *ctx, const char *filename, const EH_ExportOptions *opt)
