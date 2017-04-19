@@ -189,7 +189,7 @@ const char* AddDefaultOptions(EssWriter& writer)
 	writer.AddScaler("texture_gamma", 2.2f);
 	writer.AddScaler("shader_gamma", 2.2f);
 	writer.AddScaler("light_gamma", 2.2f);
-	//writer.AddBool("exposure", true);
+	writer.AddBool("exposure", false);
 	writer.EndNode();
 	return optName;
 }
@@ -222,7 +222,7 @@ const char* AddMediumOptions(EssWriter &writer)
 	writer.AddScaler("texture_gamma", 2.2f);
 	writer.AddScaler("shader_gamma", 2.2f);
 	writer.AddScaler("light_gamma", 2.2f);
-	//writer.AddBool("exposure", true);
+	writer.AddBool("exposure", false);
 	writer.EndNode();
 	return optName;
 }
@@ -255,7 +255,7 @@ const char* AddLowOptions(EssWriter &writer)
 	writer.AddScaler("texture_gamma", 2.2f);
 	writer.AddScaler("shader_gamma", 2.2f);
 	writer.AddScaler("light_gamma", 2.2f);
-	//writer.AddBool("exposure", true);
+	writer.AddBool("exposure", false);
 	writer.EndNode();
 	return optName;
 }
@@ -581,7 +581,7 @@ void TranslateIES(EssWriter& writer, const EH_Light &light, const std::string &l
 	writer.EndNode();
 }
 
-std::string AddLight(EssWriter& writer, const EH_Light& light, std::string &lightName, std::string &envName, std::string &rootPath, const int samples)
+std::string AddLight(EssWriter& writer, const EH_Light& light, std::string &lightName, std::string &envName, std::string &rootPath, const int samples, bool is_show_area)
 {
 	std::string itemID = lightName;
 	switch (light.type)
@@ -599,7 +599,7 @@ std::string AddLight(EssWriter& writer, const EH_Light& light, std::string &ligh
 		TranslateLight(writer, "spherelight", light, lightName, envName, samples);
 		break;
 	default: // default select the point light
-		TranslateLight(writer, "pointlight", light, lightName, envName, 1);
+		TranslateLight(writer, "pointlight", light, lightName, envName, samples);
 		break;
 	}
 
@@ -607,7 +607,7 @@ std::string AddLight(EssWriter& writer, const EH_Light& light, std::string &ligh
 	std::string instanceName = lightName + instanceExt;
 	writer.BeginNode("instance", lightName + instanceExt);
 	writer.AddRef("element",lightName);
-	writer.AddBool("visible_primary", true); //for testing
+	writer.AddBool("visible_primary", is_show_area);
 	writer.AddBool("cast_shadow", false); // block other lights? no!
 	writer.AddMatrix("transform", *((eiMatrix*)(light.light_to_world)));
 	writer.AddMatrix("motion_transform", *((eiMatrix*)(light.light_to_world)));
@@ -875,9 +875,9 @@ void EssExporter::AddHighOption()
 	mOptionName = AddHighOptions(mWriter);
 }
 
-bool EssExporter::AddLight(const EH_Light& light, std::string &lightName)
+bool EssExporter::AddLight(const EH_Light& light, std::string &lightName, bool is_show_area)
 {
-	std::string instanceName = ::AddLight(mWriter, light, lightName, mEnvName, mRootPath, mLightSamples);
+	std::string instanceName = ::AddLight(mWriter, light, lightName, mEnvName, mRootPath, mLightSamples, is_show_area);
 	if (instanceName != "")
 	{
 		mElInstances.push_back(instanceName);

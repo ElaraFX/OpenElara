@@ -32,7 +32,10 @@
 
 const int GET_RENDER_DATA_PERIOD = 100;
 
-bool g_abort_render = EI_FALSE;
+eiBool g_abort_render = EI_FALSE;
+
+/* 是否显示面光源，调试用 */
+eiBool g_show_portal_light_area = EI_FALSE;
 
 static void rprocess_pass_started(eiProcess *process, eiInt pass_id);
 static void rprocess_pass_finished(eiProcess *process, eiInt pass_id);
@@ -409,7 +412,7 @@ void EH_add_assembly_instance(EH_Context *ctx, const char *name, const EH_Assemb
 
 void EH_add_light(EH_Context *ctx, const char *name, const EH_Light *lgt)
 {
-	reinterpret_cast<EssExporter*>(ctx)->AddLight(*lgt, std::string(name));
+	reinterpret_cast<EssExporter*>(ctx)->AddLight(*lgt, std::string(name), g_show_portal_light_area);
 }
 
 void EH_set_sky(EH_Context *ctx, const EH_Sky *sky)
