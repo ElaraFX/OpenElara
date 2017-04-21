@@ -223,6 +223,8 @@ const char* AddMediumOptions(EssWriter &writer)
 	writer.AddScaler("shader_gamma", 2.2f);
 	writer.AddScaler("light_gamma", 2.2f);
 	writer.AddBool("exposure", false);
+	writer.AddScaler("GI_cache_screen_scale", 1.0f);
+	writer.AddScaler("GI_cache_radius", 0.0f);
 	writer.EndNode();
 	return optName;
 }
@@ -256,6 +258,8 @@ const char* AddLowOptions(EssWriter &writer)
 	writer.AddScaler("shader_gamma", 2.2f);
 	writer.AddScaler("light_gamma", 2.2f);
 	writer.AddBool("exposure", false);
+	writer.AddScaler("GI_cache_screen_scale", 1.0f);
+	writer.AddScaler("GI_cache_radius", 0.0f);
 	writer.EndNode();
 	return optName;
 }
@@ -288,7 +292,8 @@ const char* AddHighOptions(EssWriter &writer)
 	writer.AddScaler("texture_gamma", 2.2f);
 	writer.AddScaler("shader_gamma", 2.2f);
 	writer.AddScaler("light_gamma", 2.2f);
-	//writer.AddBool("exposure", true);
+	writer.AddScaler("GI_cache_screen_scale", 1.0f);
+	writer.AddScaler("GI_cache_radius", 0.0f);
 	writer.EndNode();
 	return optName;
 }
@@ -825,7 +830,7 @@ bool EssExporter::AddBackground(const std::string &hdri_name, const float rotati
 
 bool EssExporter::AddSun(const EH_Sun &sun)
 {
-	if (sun.intensity == 0)return true;
+	if (sun.intensity == 0 || sun.enabled == false)return true;
 	eiMatrix sun_mat;
 	eiVector sun_dir;
 	eiVector suncolor;
