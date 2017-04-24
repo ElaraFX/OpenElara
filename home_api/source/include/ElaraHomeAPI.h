@@ -313,13 +313,22 @@ struct EH_Material
 		refract_invert_weight(false),
 		ior(1.5f),
 		refract_glossiness(0.0f)
-	{
-		memset(&diffuse_color, 0, sizeof(diffuse_color));		
-		memset(&specular_color, 0, sizeof(specular_color));
-		memset(&mirror_color, 0, sizeof(mirror_color));
-		memset(&refract_color, 0, sizeof(refract_color));
-
+	{		
 		diffuse_color[0] = 1.0f; /* default diffuse color is red */
+		diffuse_color[1] = 0.0f;
+		diffuse_color[2] = 0.0f;
+
+		specular_color[0] = 1.0f;
+		specular_color[1] = 1.0f;
+		specular_color[2] = 1.0f;
+
+		mirror_color[0] = 1.0f;
+		mirror_color[1] = 1.0f;
+		mirror_color[2] = 1.0f;
+
+		refract_color[0] = 1.0f;
+		refract_color[1] = 1.0f;
+		refract_color[2] = 1.0f;
 	}
 };
 
