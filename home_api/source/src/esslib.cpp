@@ -27,10 +27,24 @@ const char* MAX_EXPORT_ESS_DEFAULT_INST_NAME = "mtoer_instgroup_00";
 const eiMatrix l2r = ei_matrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1);
 
 std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& envName, bool panorama, int panorama_size, bool is_lefthand)
-{
+{	
+	std::string cubemap_len_str;
+	if (cam.cubemap_render)
+	{
+		cubemap_len_str = "cubemap_cam_len";
+		writer.BeginNode("cubemap_camera", cubemap_len_str);
+			writer.AddBool("stereo", false);
+		writer.EndNode();
+	}
+
 	//Declare camera
 	std::string itemID = "Camera_";
 	writer.BeginNode("camera", itemID);
+
+	if (!cubemap_len_str.empty())
+	{
+		writer.AddRef("lens_shader", cubemap_len_str);
+	}
 
 	if (!envName.empty())
 	{
