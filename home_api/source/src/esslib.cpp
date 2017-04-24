@@ -897,7 +897,14 @@ void EssExporter::AddMesh(const EH_Mesh& model, const std::string &modelName)
 	mWriter.BeginNode("poly", modelName.c_str());
 	mWriter.AddPointArray("pos_list", (eiVector*)model.verts, model.num_verts);
 	mWriter.AddIndexArray("triangle_list", (uint_t*)model.face_indices, model.num_faces * 3, false);
-	mWriter.AddDeclare( "vector2[]", "uv0", "varying" );
+
+	if (model.normals)
+	{
+		mWriter.AddDeclare("vector[]", "N", "varying");
+		mWriter.AddPointArray("N", (eiVector*)model.normals, model.num_verts);
+	}
+
+	mWriter.AddDeclare("vector2[]", "uv0", "varying");
 	mWriter.AddVector2Array("uv0", (eiVector2*)model.uvs, model.num_verts);
 
 	if (model.mtl_indices)
