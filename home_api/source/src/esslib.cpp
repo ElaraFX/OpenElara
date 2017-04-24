@@ -694,29 +694,9 @@ std::string AddAlphaTexture(EssWriter& writer, const std::string &texPath, const
 }
 
 std::string AddNormalBump(EssWriter& writer, const std::string &normalMap){
-	if(normalMap.empty()) return "";
-
-	std::string uvgenName = normalMap + "_uvgen";
-	writer.BeginNode("max_stduv", uvgenName);
-	writer.AddToken("mapChannel", "uv0");
-	writer.AddScaler("uScale", 1.0);
-	writer.AddBool("uWrap", true);
-	writer.AddScaler("vScale", 1.0);
-	writer.AddBool("vWrap", true);
-	writer.EndNode();
-
-	std::string bitmapName = normalMap + "_bitmap";
-	writer.BeginNode("max_bitmap", bitmapName);
-	writer.LinkParam("tex_coords", uvgenName, "result");
-	writer.AddToken("tex_fileName", normalMap);
-	writer.EndNode();
-
 	std::string normalName = normalMap + "_normal";
-	writer.BeginNode("max_stdout", normalName);
-	writer.LinkParam("stdout_color", normalMap, "result");
-	writer.LinkParam("stdout_alpha", normalMap, "result_alpha");
-	writer.LinkParam("stdout_bump", normalMap, "result_bump");
-	writer.LinkParam("stdout_mono", normalMap, "result_mono");
+	writer.BeginNode("max_normal_bump", normalName);
+	writer.LinkParam("tex_normal_map", normalMap, "result");
 	writer.EndNode();
 	return normalName;
 }
@@ -732,6 +712,10 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	if(mat.bump_tex.filename)
 	{
 		normal_map_tex_node = AddTexture(writer, mat.bump_tex.filename, mat.bump_tex.repeat, matName + "_n", rootPath);
+		if(mat.normal_bump)
+		{
+			normal_map_tex_node = AddNormalBump(writer, normal_map_tex_node);
+		}
 	}
 	if(mat.specular_tex.filename)
 	{
@@ -754,8 +738,8 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 		writer.AddColor("diffuse_color", color);
 	}
 	if(mat.bump_tex.filename != 0)
-	{
-		writer.LinkParam("bump_map", normal_map_tex_node, "result");
+	{		
+		writer.LinkParam("bump_map_bump", normal_map_tex_node, "result_bump");
 	}
 	if(mat.specular_tex.filename != 0)
 	{
@@ -774,11 +758,19 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	writer.AddScaler("diffuse_weight", mat.diffuse_weight);
 	writer.AddScaler("roughness", mat.roughness);
 
+	writer.AddScaler("bump_weight", mat.bump_weight);
+
 	writer.AddScaler("specular_weight", mat.specular_weight);
 	writer.AddScaler("glossiness", mat.glossiness);
 	writer.AddScaler("fresnel_ior_glossy", mat.specular_fresnel);
 	writer.AddScaler("anisotropy", mat.anisotropy);
 
+	eiVector reflection_color = ei_vector(mat.mirror_color[0], mat.mirror_color[1], mat.mirror_color[2]);
+	writer.AddScaler("reflection_weight", mat.mirror_weight);
+	writer.AddColor("reflection_color", reflection_color);
+
+	eiVector refraction_color = ei_vector(mat.refract_color[0], mat.refract_color[1], mat.refract_color[2]);
+	writer.AddColor("refraction_color", refraction_color);
 	writer.AddScaler("refraction_weight", mat.refract_weight);
 	writer.AddScaler("refraction_glossiness", mat.refract_glossiness);
 	writer.AddScaler("ior", mat.ior);
