@@ -294,7 +294,7 @@ struct EH_Material
 	float refract_glossiness;
 
 	EH_Material() :
-		backface_cull(true),
+		backface_cull(false),
 		diffuse_weight(0.8f),
 		roughness(0.0f),
 		backlight(0.0f),

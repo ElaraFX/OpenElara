@@ -743,7 +743,7 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	}
 	if(mat.specular_tex.filename != 0)
 	{
-		writer.LinkParam("specular_color_map", specular_tex_node, "result");
+		writer.LinkParam("specular_color", specular_tex_node, "result");
 	}
 	else
 	{
@@ -752,7 +752,7 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	}
 	if(mat.transp_tex.filename != 0)
 	{
-		writer.LinkParam("transparency_color_map", transparent_tex_node, "result");
+		writer.LinkParam("transparency_weight", transparent_tex_node, "result");
 	}
 
 	writer.AddScaler("diffuse_weight", mat.diffuse_weight);
