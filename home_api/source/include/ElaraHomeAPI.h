@@ -306,7 +306,7 @@ struct EH_Material
 		transp_weight(0.0f),
 		transp_invert_weight(false),
 		bump_weight(0.0f),
-		normal_bump(false),
+		normal_bump(true),
 		mirror_weight(0.0f),
 		mirror_fresnel(0.0f),
 		refract_weight(0.0f),
