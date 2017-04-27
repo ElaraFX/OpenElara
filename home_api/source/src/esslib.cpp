@@ -136,6 +136,7 @@ inline bool CheckVec3Big(eiVector &val)
 }
 
 #define ER_GEO_TRANS_EPS		0.00001f
+#define ER_TRIANGLE_AREA_EPS	0.0001f
 
 extern std::string utf16_to_utf8(const char* str);
 //std::string AddMeshData(EssWriter& writer, CElaraModel& model, const std::string &modelName, std::vector<std::string> &matName)
@@ -481,6 +482,23 @@ std::string AddSun(EssWriter& writer, const eiMatrix &mat, const float intensity
 	return instanceName;
 }
 
+double PointDistance(eiVector &p1, eiVector &p2)
+{
+	return std::sqrt((p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y) + (p1.z - p2.z) * (p1.z - p2.z));
+}
+
+double TriangleArea(eiVector &p1, eiVector &p2, eiVector &p3)
+{
+	double area = 0;  
+	double a = 0, b = 0, c = 0, s = 0;  
+	a = PointDistance(p1, p2);  
+	b = PointDistance(p2, p3);  
+	c = PointDistance(p1, p3);  
+	s = 0.5 * (a + b + c);  
+	area = std::sqrt(s * (s - a) * (s - b) * (s - c));  
+	return area;
+}
+
 EssExporter::EssExporter(void) :
 	display_callback(NULL),
 	progress_callback(NULL),
@@ -781,9 +799,22 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 
 	writer.EndNode();
 
+	std::string max_input_mtl_name;
+	if (mat.backface_cull)
+	{
+		max_input_mtl_name = matName + "backface_shader";
+		writer.BeginNode( "backface_cull", max_input_mtl_name );
+		writer.LinkParam( "material", ei_standard_node, "result" );
+		writer.EndNode();
+	}
+	else
+	{
+		max_input_mtl_name = ei_standard_node;
+	}
+
 	std::string result_node = matName + "_result";
 	writer.BeginNode("max_result", result_node);
-	writer.LinkParam("input", ei_standard_node, "result");
+	writer.LinkParam("input", max_input_mtl_name, "result");
 	writer.EndNode();
 
 	std::string mat_link_name = matName + "_osl";
@@ -902,7 +933,37 @@ void EssExporter::AddMesh(const EH_Mesh& model, const std::string &modelName)
 {
 	mWriter.BeginNode("poly", modelName.c_str());
 	mWriter.AddPointArray("pos_list", (eiVector*)model.verts, model.num_verts);
-	mWriter.AddIndexArray("triangle_list", (uint_t*)model.face_indices, model.num_faces * 3, false);
+
+	std::vector<uint_t> filter_vert_index;	
+	std::vector<uint_t> filter_mtl_index;
+	filter_vert_index.reserve(model.num_faces * 3);
+	if (model.mtl_indices)
+	{		
+		filter_mtl_index.reserve(model.num_faces);
+	}	
+	for (int i = 0; i < model.num_faces; ++i)
+	{
+		uint_t *p_index = (uint_t*)model.face_indices + (i * 3);
+		uint_t index0 = (*p_index);
+		uint_t index1 = (*(p_index + 1));
+		uint_t index2 = (*(p_index + 2));
+		eiVector *p0 = (eiVector*)model.verts + index0;
+		eiVector *p1 = (eiVector*)model.verts + index1;
+		eiVector *p2 = (eiVector*)model.verts + index2;
+
+		if (TriangleArea(*p0, *p1, *p2) > ER_TRIANGLE_AREA_EPS)
+		{
+			filter_vert_index.push_back(index0);
+			filter_vert_index.push_back(index1);
+			filter_vert_index.push_back(index2);
+
+			if (model.mtl_indices)
+			{
+				filter_mtl_index.push_back(*(model.mtl_indices + i));
+			}
+		}		
+	}
+	mWriter.AddIndexArray("triangle_list", &filter_vert_index[0], filter_vert_index.size(), false);
 
 	if (model.normals)
 	{
@@ -916,7 +977,7 @@ void EssExporter::AddMesh(const EH_Mesh& model, const std::string &modelName)
 	if (model.mtl_indices)
 	{
 		mWriter.AddDeclare("index[]", "mtl_index", "uniform");
-		mWriter.AddIndexArray("mtl_index", model.mtl_indices, model.num_faces, false);
+		mWriter.AddIndexArray("mtl_index", &filter_mtl_index[0], filter_mtl_index.size(), false);
 	}
 
 	mWriter.EndNode();
