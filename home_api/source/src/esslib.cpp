@@ -319,7 +319,7 @@ const char* AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &op
 	writer.BeginNode("options", optName);
 	writer.AddScaler("min_samples", -3);
 	writer.AddScaler("max_samples", option.sampler_AA);
-	writer.AddScaler("diffuse_samples", option.diffuse_sampler_num);
+	writer.AddScaler("diffuse_samples", option.diffuse_sample_num);
 	writer.AddScaler("sss_samples", 64);
 	writer.AddScaler("volume_indirect_samples", 8);
 	writer.AddScaler("light_cutoff", 0.01);

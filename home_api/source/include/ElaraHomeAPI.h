@@ -170,13 +170,13 @@ struct EH_RenderOptions
 struct EH_CustomRenderOptions
 {
 	uint_t sampler_AA;
-	uint_t diffuse_sampler_num;	
+	uint_t diffuse_sample_num;	
 	uint_t trace_diffuse_depth;
 	uint_t trace_total_depth;
 
 	EH_CustomRenderOptions() :
 		sampler_AA(16),
-		diffuse_sampler_num(8),
+		diffuse_sample_num(8),
 		trace_diffuse_depth(3),
 		trace_total_depth(10)
 	{
