@@ -136,7 +136,7 @@ inline bool CheckVec3Big(eiVector &val)
 }
 
 #define ER_GEO_TRANS_EPS		0.00001f
-#define ER_TRIANGLE_AREA_EPS	0.0001f
+#define ER_TRIANGLE_AREA_EPS	0.000001f
 
 extern std::string utf16_to_utf8(const char* str);
 //std::string AddMeshData(EssWriter& writer, CElaraModel& model, const std::string &modelName, std::vector<std::string> &matName)
@@ -296,6 +296,40 @@ const char* AddHighOptions(EssWriter &writer)
 	writer.AddBool("GI_cache_preview", false);
 	writer.AddScaler("diffuse_depth", 5);
 	writer.AddScaler("sum_depth", 10);
+	writer.AddBool("caustic", false);
+	writer.AddBool("motion", false);
+	writer.AddBool("use_clamp", false);
+	writer.AddScaler("clamp_value", 20.0f);
+	writer.AddBool("displace", false);	
+	writer.AddEnum("engine", "GI cache");
+	writer.AddBool("GI_cache_no_leak", true);
+	writer.AddScaler("display_gamma", 2.2f);
+	writer.AddScaler("texture_gamma", 2.2f);
+	writer.AddScaler("shader_gamma", 2.2f);
+	writer.AddScaler("light_gamma", 2.2f);
+	writer.AddScaler("GI_cache_screen_scale", 1.0f);
+	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.EndNode();
+	return optName;
+}
+
+const char* AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &option)
+{
+	static const char* optName = "GlobalHighOption";
+	writer.BeginNode("options", optName);
+	writer.AddScaler("min_samples", -3);
+	writer.AddScaler("max_samples", option.sampler_AA);
+	writer.AddScaler("diffuse_samples", option.diffuse_sampler_num);
+	writer.AddScaler("sss_samples", 64);
+	writer.AddScaler("volume_indirect_samples", 8);
+	writer.AddScaler("light_cutoff", 0.01);
+	writer.AddScaler("GI_cache_density", 1.0);
+	writer.AddScaler("GI_cache_passes", 100);
+	writer.AddScaler("GI_cache_radius", 30);
+	writer.AddScaler("GI_cache_points", 5);
+	writer.AddBool("GI_cache_preview", false);
+	writer.AddScaler("diffuse_depth", option.trace_diffuse_depth);
+	writer.AddScaler("sum_depth", option.trace_total_depth);
 	writer.AddBool("caustic", false);
 	writer.AddBool("motion", false);
 	writer.AddBool("use_clamp", false);
@@ -857,6 +891,11 @@ bool EssExporter::AddDefaultMaterial()
 	std::string name = ::AddDefaultMaterial(mWriter,mCheckNormal);
 	mDefaultMatName.push_back(name);
 	return true;
+}
+
+void EssExporter::AddCustomOption(const EH_CustomRenderOptions &option)
+{
+	mOptionName = AddCustomOptions(mWriter, option);
 }
 
 bool EssExporter::AddBackground(const std::string &hdri_name, const float rotation, const float hdri_intensity)

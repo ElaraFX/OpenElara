@@ -43,7 +43,7 @@ static void rprocess_job_started(eiProcess *process, const eiTag job, const eiTh
 static void rprocess_job_finished(eiProcess *process, const eiTag job, const eiInt job_state, const eiThreadID threadId);
 static void rprocess_info(eiProcess *process, const char *text);
 
-struct RenderProcess
+struct EHRenderProcess
 {
 	eiProcess					base;
 	eiThreadHandle				renderThread;
@@ -63,7 +63,7 @@ struct RenderProcess
 	eiBool						is_first_pass;
 	EH_LogCallback              log_cb;
 
-	RenderProcess(
+	EHRenderProcess(
 		eiInt res_x, 
 		eiInt res_y, 
 		eiRenderParameters *_render_params, 
@@ -88,7 +88,7 @@ struct RenderProcess
 		log_cb = NULL;
 	}
 
-	~RenderProcess()
+	~EHRenderProcess()
 	{
 		ei_delete_rwlock(bufferLock);
 	}
@@ -139,7 +139,7 @@ static void rprocess_pass_started(eiProcess *process, eiInt pass_id)
 
 static void rprocess_pass_finished(eiProcess *process, eiInt pass_id)
 {
-	RenderProcess *rp = (RenderProcess *)process;
+	EHRenderProcess *rp = (EHRenderProcess *)process;
 
 	if (rp->is_first_pass)
 	{
@@ -157,7 +157,7 @@ static void rprocess_job_started(
 	const eiTag job, 
 	const eiThreadID threadId)
 {
-	RenderProcess *rp = (RenderProcess *)process;
+	EHRenderProcess *rp = (EHRenderProcess *)process;
 
 	if (rp->progressive)
 	{
@@ -214,7 +214,7 @@ static void rprocess_job_finished(
 	const eiInt job_state, 
 	const eiThreadID threadId)
 {
-	RenderProcess *rp = (RenderProcess *)process;
+	EHRenderProcess *rp = (EHRenderProcess *)process;
 
 	if (ei_db_type(job) != EI_TYPE_JOB_BUCKET)
 	{
@@ -288,7 +288,7 @@ static void rprocess_info(
 	eiProcess *process, 
 	const char *text)
 {
-	RenderProcess *rp = (RenderProcess *)process;
+	EHRenderProcess *rp = (EHRenderProcess *)process;
 	if (rp->log_cb)
 	{
 		rp->log_cb(EH_INFO, text);
@@ -385,6 +385,11 @@ void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt)
 	}
 }
 
+void EH_set_custom_render_options(EH_Context *ctx, const EH_CustomRenderOptions *opt)
+{
+	reinterpret_cast<EssExporter*>(ctx)->AddCustomOption(*opt);
+}
+
 void EH_set_camera(EH_Context *ctx, const EH_Camera *cam)
 {
 	reinterpret_cast<EssExporter*>(ctx)->AddCamera(*cam, false, 0);
@@ -442,7 +447,7 @@ bool WindowProcOnRendering(void *param, bool is_abort_render, EH_display_callbac
 {
 	ei_sleep(GET_RENDER_DATA_PERIOD);
 
-	RenderProcess *rp = (RenderProcess *)param;
+	EHRenderProcess *rp = (EHRenderProcess *)param;
 
 	if (is_abort_render)
 	{
@@ -543,7 +548,7 @@ bool EH_start_render(EH_Context *ctx, const char *ess_name, bool is_interactive)
 					}
 
 					progressive = EI_TRUE;
-					RenderProcess rp(res_x, res_y, &render_params, is_interactive, progressive);
+					EHRenderProcess rp(res_x, res_y, &render_params, is_interactive, progressive);
 					rp.log_cb = reinterpret_cast<EssExporter*>(ctx)->log_callback;
 
 					if (is_interactive)

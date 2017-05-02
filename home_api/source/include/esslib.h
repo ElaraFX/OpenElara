@@ -71,6 +71,7 @@ public:
 	void AddLowOption();
 	void AddHighOption();
 	bool AddDefaultMaterial();
+	void AddCustomOption(const EH_CustomRenderOptions &option);
 	bool AddBackground(const std::string &hdri_name, const float rotation, const float hdri_intensity);
 	bool AddSun(const EH_Sun &sun);
 	void SetTexPath(std::string &path);

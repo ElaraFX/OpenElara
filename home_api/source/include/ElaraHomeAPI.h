@@ -165,11 +165,32 @@ struct EH_RenderOptions
 	EH_RenderQuality quality;
 };
 
+/** The custom render options for user
+*/
+struct EH_CustomRenderOptions
+{
+	uint_t sampler_AA;
+	uint_t diffuse_sampler_num;	
+	uint_t trace_diffuse_depth;
+	uint_t trace_total_depth;
+
+	EH_CustomRenderOptions() :
+		sampler_AA(16),
+		diffuse_sampler_num(8),
+		trace_diffuse_depth(3),
+		trace_total_depth(10)
+	{
+
+	}
+};
+
 /** Set current render options.
  */
 EH_API void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt);
 
-
+/** Set current custom render options.
+ */
+EH_API void EH_set_custom_render_options(EH_Context *ctx, const EH_CustomRenderOptions *opt);
 
 /** The camera data for user to fill
  */
