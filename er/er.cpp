@@ -24,8 +24,8 @@
 #include <ei_timer.h>
 #include <vector>
 #include <deque>
-#include <OpenImageIO/filesystem.h>
-#include <signal.h>
+#include <csignal>
+#include <ctime>
 
 static const char *g_str_on = "on";
 
@@ -481,9 +481,50 @@ static void display_callback(eiInt frameWidth, eiInt frameHeight, void *param)
 	rp->update_render_view(frameWidth, frameHeight);
 }
 
+// convert_native_arguments is used to convert native argument 
+// strings into UTF-8 strings which is required by the core.
+// The implementation is modified from OpenImageIO project:
+// https://github.com/OpenImageIO/oiio
+//
+#ifdef _WIN32
+#include <shellapi.h>
+std::vector<std::string> argvList;
+std::string utf16_to_utf8(const WCHAR* str)
+{
+	std::string utf8;
+	utf8.resize(WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL));
+	WideCharToMultiByte(CP_UTF8, 0, str, -1, &utf8[0], (int)utf8.size(), NULL, NULL);
+	return utf8;
+}
+#endif
+
+void convert_native_arguments(int argc, const char *argv[])
+{
+#ifdef _WIN32
+    // Windows only, standard main() entry point does not accept unicode file
+    // paths, here we retrieve wide char arguments and convert them to utf8
+    if (argc == 0)
+        return;
+
+    int native_argc;
+    wchar_t **native_argv = CommandLineToArgvW(GetCommandLineW(), &native_argc);
+
+    if (!native_argv || native_argc != argc)
+        return;
+
+    for (int i = 0; i < argc; i++) {
+        std::string utf8_arg = utf16_to_utf8(native_argv[i]);
+        argvList.push_back(utf8_arg);
+    }
+    for (int i = 0; i < argc; i++) {
+        argv[i] = argvList[i].c_str();
+    }
+#endif
+}
+
 int main_body(int argc, char *argv[])
 {
-	OIIO::Filesystem::convert_native_arguments (argc, (const char **)argv);
+	convert_native_arguments(argc, (const char **)argv);
 
 	int ret = EXIT_SUCCESS;
 
@@ -798,6 +839,22 @@ int main_body(int argc, char *argv[])
 					else
 					{
 						ei_error("No enough arguments specified for command: -rr_depth\n");
+					}
+				}
+				else if (strcmp(argv[i], "-ignore_emission") == 0)
+				{
+					// -ignore_emission value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_bool("options", "ignore_emission", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -ignore_emission\n");
 					}
 				}
 				else if (strcmp(argv[i], "-filter") == 0)
