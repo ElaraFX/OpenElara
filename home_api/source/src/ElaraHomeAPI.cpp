@@ -500,7 +500,9 @@ void EH_set_display_callback(EH_Context *ctx, EH_display_callback cb)
 }
 
 bool EH_start_render(EH_Context *ctx, const char *ess_name, bool is_interactive)
-{	
+{
+	g_abort_render = EI_FALSE;
+
 	bool ret = true;
 	ei_context();
 
