@@ -24,8 +24,8 @@
 #include <ei_timer.h>
 #include <vector>
 #include <deque>
-#include <OpenImageIO/filesystem.h>
-#include <signal.h>
+#include <csignal>
+#include <ctime>
 
 static const char *g_str_on = "on";
 
@@ -51,13 +51,15 @@ struct RenderProcess
 	eiScalar					last_job_percent;
 	eiTimer						first_pixel_timer;
 	eiBool						is_first_pass;
+	std::string					aov_name;
 
 	RenderProcess(
 		eiInt res_x, 
 		eiInt res_y, 
 		eiRenderParameters *_render_params, 
 		eiBool _interactive, 
-		eiBool _progressive)
+		eiBool _progressive, 
+		const std::string & _aov_name)
 	{
 		init_callbacks();
 		renderThread = NULL;
@@ -74,6 +76,7 @@ struct RenderProcess
 		last_job_percent = 0.0f;
 		const eiColor blackColor = ei_color(0.0f);
 		originalBuffer.resize(imageWidth * imageHeight, blackColor);
+		aov_name = _aov_name;
 	}
 
 	~RenderProcess()
@@ -217,27 +220,74 @@ static void rprocess_job_finished(
 		}
 	}
 
-	eiFrameBufferCache	infoFrameBufferCache;
-	eiFrameBufferCache	colorFrameBufferCache;
+	eiFrameBufferCache	infoBuffer;
+	eiFrameBufferCache	sourceBuffer;
 
 	ei_framebuffer_cache_init(
-		&infoFrameBufferCache, 
+		&infoBuffer, 
 		pJob->infoFrameBuffer, 
 		pJob->pos_i, 
 		pJob->pos_j, 
 		pJob->point_spacing, 
 		pJob->pass_id, 
 		NULL);
-	ei_framebuffer_cache_init(
-		&colorFrameBufferCache, 
-		pJob->colorFrameBuffer, 
-		pJob->pos_i, 
-		pJob->pos_j, 
-		pJob->point_spacing, 
-		pJob->pass_id, 
-		&infoFrameBufferCache);
 
-	const eiRect4i & fb_rect = infoFrameBufferCache.m_rect;
+	if (rp->aov_name.empty() || rp->aov_name == "color")
+	{
+		ei_framebuffer_cache_init(
+			&sourceBuffer, 
+			pJob->colorFrameBuffer, 
+			pJob->pos_i, 
+			pJob->pos_j, 
+			pJob->point_spacing, 
+			pJob->pass_id, 
+			&infoBuffer);
+	}
+	else if (rp->aov_name == "opacity")
+	{
+		ei_framebuffer_cache_init(
+			&sourceBuffer, 
+			pJob->opacityFrameBuffer, 
+			pJob->pos_i, 
+			pJob->pos_j, 
+			pJob->point_spacing, 
+			pJob->pass_id, 
+			&infoBuffer);
+	}
+	else
+	{
+		eiDataTableAccessor<eiTag> frameBuffers_iter(pJob->frameBuffers);
+		bool foundFrameBuffer = false;
+
+		for (eiInt i = 0; i < frameBuffers_iter.size(); ++i)
+		{
+			eiTag frameBufferTag = frameBuffers_iter.get(i);
+
+			eiDataAccessor<eiFrameBuffer> frameBuffer(frameBufferTag);
+
+			if (rp->aov_name == ei_framebuffer_get_name(frameBuffer.get()))
+			{
+				ei_framebuffer_cache_init(
+					&sourceBuffer, 
+					frameBufferTag, 
+					pJob->pos_i, 
+					pJob->pos_j, 
+					pJob->point_spacing, 
+					pJob->pass_id, 
+					&infoBuffer);
+				foundFrameBuffer = true;
+				break;
+			}
+		}
+
+		if (!foundFrameBuffer)
+		{
+			ei_framebuffer_cache_exit(&infoBuffer);
+			return;
+		}
+	}
+
+	const eiRect4i & fb_rect = infoBuffer.m_rect;
 
 	/* write bucket updates into the original buffer */
 	const eiInt imageWidth = rp->imageWidth;
@@ -251,7 +301,7 @@ static void rprocess_job_finished(
 			for (eiInt i = fb_rect.left; i < fb_rect.right; ++i)
 			{
 				ei_framebuffer_cache_get_final(
-					&colorFrameBufferCache, 
+					&sourceBuffer, 
 					i, 
 					j, 
 					&(originalBuffer[i - fb_rect.left]));
@@ -261,8 +311,8 @@ static void rprocess_job_finished(
 	}
 	ei_read_unlock(rp->bufferLock);
 
-	ei_framebuffer_cache_exit(&colorFrameBufferCache);
-	ei_framebuffer_cache_exit(&infoFrameBufferCache);
+	ei_framebuffer_cache_exit(&sourceBuffer);
+	ei_framebuffer_cache_exit(&infoBuffer);
 }
 
 static void rprocess_info(
@@ -431,9 +481,50 @@ static void display_callback(eiInt frameWidth, eiInt frameHeight, void *param)
 	rp->update_render_view(frameWidth, frameHeight);
 }
 
+// convert_native_arguments is used to convert native argument 
+// strings into UTF-8 strings which is required by the core.
+// The implementation is modified from OpenImageIO project:
+// https://github.com/OpenImageIO/oiio
+//
+#ifdef _WIN32
+#include <shellapi.h>
+std::vector<std::string> argvList;
+std::string utf16_to_utf8(const WCHAR* str)
+{
+	std::string utf8;
+	utf8.resize(WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL));
+	WideCharToMultiByte(CP_UTF8, 0, str, -1, &utf8[0], (int)utf8.size(), NULL, NULL);
+	return utf8;
+}
+#endif
+
+void convert_native_arguments(int argc, const char *argv[])
+{
+#ifdef _WIN32
+    // Windows only, standard main() entry point does not accept unicode file
+    // paths, here we retrieve wide char arguments and convert them to utf8
+    if (argc == 0)
+        return;
+
+    int native_argc;
+    wchar_t **native_argv = CommandLineToArgvW(GetCommandLineW(), &native_argc);
+
+    if (!native_argv || native_argc != argc)
+        return;
+
+    for (int i = 0; i < argc; i++) {
+        std::string utf8_arg = utf16_to_utf8(native_argv[i]);
+        argvList.push_back(utf8_arg);
+    }
+    for (int i = 0; i < argc; i++) {
+        argv[i] = argvList[i].c_str();
+    }
+#endif
+}
+
 int main_body(int argc, char *argv[])
 {
-	OIIO::Filesystem::convert_native_arguments (argc, (const char **)argv);
+	convert_native_arguments(argc, (const char **)argv);
 
 	int ret = EXIT_SUCCESS;
 
@@ -503,6 +594,7 @@ int main_body(int argc, char *argv[])
 		std::string force_render_root_name;
 		std::string force_render_cam_name;
 		std::string force_render_option_name;
+		std::string aov_name;
 
 		for (int i = 0; i < argc; ++i)
 		{
@@ -732,6 +824,39 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -sum_depth\n");
 					}
 				}
+				else if (strcmp(argv[i], "-rr_depth") == 0)
+				{
+					// -rr_depth value
+					//
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_int("options", "rr_depth", atoi(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -rr_depth\n");
+					}
+				}
+				else if (strcmp(argv[i], "-ignore_emission") == 0)
+				{
+					// -ignore_emission value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_bool("options", "ignore_emission", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -ignore_emission\n");
+					}
+				}
 				else if (strcmp(argv[i], "-filter") == 0)
 				{
 					// -filter type size
@@ -949,7 +1074,7 @@ int main_body(int argc, char *argv[])
 					{
 						const char *value = argv[i + 1];
 
-						ei_override_bool("options", "GI_cache_preview", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+						ei_override_enum("options", "GI_cache_preview", value);
 
 						i += 1;
 					}
@@ -1213,6 +1338,22 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -ultra_texcache\n");
 					}
 				}
+				else if (strcmp(argv[i], "-shader_specialization") == 0)
+				{
+					// -shader_specialization value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_bool("options", "shader_specialization", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -shader_specialization\n");
+					}
+				}
 				else if (strcmp(argv[i], "-dongle_activate") == 0)
 				{
 					// -dongle_activate code1 code2 license_code
@@ -1265,6 +1406,19 @@ int main_body(int argc, char *argv[])
 					else
 					{
 						ei_error("No enough arguments specified for command: -render\n");
+					}
+				}
+				else if (strcmp(argv[i], "-aov") == 0)
+				{
+					if ((i + 1) < argc)
+					{
+						aov_name = argv[i + 1];
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -aov\n");
 					}
 				}
 				else
@@ -1367,7 +1521,7 @@ int main_body(int argc, char *argv[])
 							{
 								progressive = EI_TRUE;
 							}
-							RenderProcess rp(res_x, res_y, &render_params, interactive, progressive);
+							RenderProcess rp(res_x, res_y, &render_params, interactive, progressive, aov_name);
 
 							if (interactive)
 							{
@@ -1560,7 +1714,21 @@ BOOL CALLBACK MyMiniDumpCallback(
 
 void CreateMiniDump(EXCEPTION_POINTERS *pep)
 {
-	HANDLE hFile = CreateFile("elara_minidump.dmp", GENERIC_READ | GENERIC_WRITE, 
+	char cur_dir[ EI_MAX_FILE_NAME_LEN ];
+	char dump_filename[ EI_MAX_FILE_NAME_LEN ];
+	char dump_filepath[ EI_MAX_FILE_NAME_LEN ];
+	char time_str[ EI_MAX_FILE_NAME_LEN ];
+	
+	time_t now = time(0);
+	tm *localtm = localtime(&now);
+	strftime(time_str, EI_MAX_FILE_NAME_LEN, "%Y-%m-%d-%H-%M-%S", localtm);
+	sprintf(dump_filename, "elara_minidump_%d-%d-%d_%s.dmp", 
+		EI_VERSION_MAJOR, EI_VERSION_MINOR, EI_VERSION_PATCH, 
+		time_str);
+	ei_get_current_directory(cur_dir);
+	ei_append_filename(dump_filepath, cur_dir, dump_filename);
+
+	HANDLE hFile = CreateFile(dump_filepath, GENERIC_READ | GENERIC_WRITE, 
 		0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (hFile != NULL && hFile != INVALID_HANDLE_VALUE)
