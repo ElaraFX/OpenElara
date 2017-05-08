@@ -22,6 +22,7 @@
 
 const char* instanceExt = "_instance";
 const char* MAX_EXPORT_ESS_DEFAULT_INST_NAME = "mtoer_instgroup_00";
+const char* g_inst_group_name = "mtoer_instgroup_00";
 
 //left hand to right hand matrix
 const eiMatrix l2r = ei_matrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1);
@@ -1045,12 +1046,12 @@ void EssExporter::AddMeshInstance(const char *instName, const EH_MeshInstance &m
 void EssExporter::EndExport()
 {
 	printf("EndExport\n");
-	mWriter.BeginNode("instgroup", "er_instgroup");
+	mWriter.BeginNode("instgroup", g_inst_group_name);
 	mWriter.AddRefGroup("instance_list", mElInstances);
 	mWriter.EndNode();
 
 	const char* optName = mOptionName.empty() ? AddMediumOptions(mWriter) : mOptionName.c_str();
-	mWriter.AddRenderCommand("er_instgroup", mCamName.c_str(), optName);
+	mWriter.AddRenderCommand(g_inst_group_name, mCamName.c_str(), optName);
 	mWriter.Close();
 
 	mElInstances.clear();
