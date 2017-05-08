@@ -810,6 +810,7 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 
 	writer.AddScaler("diffuse_weight", mat.diffuse_weight);
 	writer.AddScaler("roughness", mat.roughness);
+	writer.AddScaler("backlighting_weight", mat.backlight);
 
 	writer.AddScaler("bump_weight", mat.bump_weight);
 
