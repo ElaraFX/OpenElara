@@ -510,7 +510,7 @@ bool EH_start_render(EH_Context *ctx, const char *ess_name, bool is_interactive)
 	{		
 		ei_info("Start parsing file: %s\n", ess_name);
 
-		if (!ei_parse2(ess_name, is_interactive))
+		if (!ei_parse2(ess_name, true))
 		{
 			ei_error("Failed to parse file: %s\n", ess_name);
 
