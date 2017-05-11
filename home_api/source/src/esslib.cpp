@@ -34,7 +34,14 @@ std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& 
 	{
 		cubemap_len_str = "cubemap_cam_len";
 		writer.BeginNode("cubemap_camera", cubemap_len_str);
-			writer.AddBool("stereo", false);
+			writer.AddBool("stereo", cam.stereo);
+		writer.EndNode();
+	}
+	else if(cam.spherical_render)
+	{
+		cubemap_len_str = "spherical_camera_len";
+		writer.BeginNode("spherical_camera", cubemap_len_str);
+		writer.AddBool("stereo", cam.stereo);
 		writer.EndNode();
 	}
 
