@@ -43,6 +43,7 @@ struct RenderProcess
 	eiBool						interactive;
 	eiBool						progressive;
 	eiBool						target_set;
+	eiVector					obj_center;
 	eiVector					up_vector;
 	eiVector					camera_target;
 	eiScalar					min_target_dist;
@@ -68,6 +69,7 @@ struct RenderProcess
 		interactive = _interactive;
 		progressive = _progressive;
 		target_set = EI_FALSE;
+		obj_center = 0.0f;
 		up_vector = ei_vector(0.0f, 0.0f, 1.0f);
 		camera_target = 0.0f;
 		min_target_dist = 0.0f;
@@ -114,6 +116,34 @@ struct RenderProcess
 		ei_write_unlock(bufferLock);
 	}
 };
+
+static eiUint custom_trace(
+	eiProcess *process, 
+	eiTLS *tls, 
+	eiBaseBucket *bucket, 
+	eiTag scene_tag)
+{
+	RenderProcess *rp = (RenderProcess *)process;
+
+	/* currently we are simply using the center of the entire scene 
+	   to facilitate the computation of camera target */
+	/* TODO: for more advanced navigation, you can call ei_rt_trace 
+	   in this function to perform hit-testing with the scene, and 
+	   use the center of the hit object instance */
+	eiBBox bbox = ei_bbox();
+	ei_rt_scene_box(scene_tag, &bbox);
+	bbox.center(rp->obj_center);
+
+	/* since we only need to re-compute one time, clear ourselves 
+	   once we are done */
+	ei_set_custom_trace(NULL);
+	/* issue target re-computation */
+	rp->target_set = EI_FALSE;
+
+	/* TODO: remember to return the number of rays shot in this 
+	   function if you called ei_rt_trace */
+	return 0;
+}
 
 static void rprocess_pass_started(eiProcess *process, eiInt pass_id)
 {
@@ -399,9 +429,8 @@ static void display_callback(eiInt frameWidth, eiInt frameHeight, void *param)
 					rp->up_vector = 0.0f;
 					rp->up_vector[up_axis] = sign(cam_up[up_axis]);
 					printf("Up vector set to [%f %f %f]\n", rp->up_vector.x, rp->up_vector.y, rp->up_vector.z);
-					eiVector obj_center = ei_vector(0.0f, 0.0f, 0.0f);
 					/* use absolute value to ensure camera target is always in front of camera direction */
-					eiScalar focal_dist = absf(point_plane_dist(camera_pos, -cam_dir, obj_center));
+					eiScalar focal_dist = absf(point_plane_dist(camera_pos, -cam_dir, rp->obj_center));
 					printf("Initial focal distance: %f\n", focal_dist);
 					rp->camera_target = camera_pos + cam_dir * focal_dist;
 					rp->min_target_dist = 0.01f * dist(camera_pos, rp->camera_target);
@@ -853,6 +882,49 @@ int main_body(int argc, char *argv[])
 					else
 					{
 						ei_error("No enough arguments specified for command: -ignore_emission\n");
+					}
+				}
+				else if (strcmp(argv[i], "-clamp") == 0)
+				{
+					// -clamp value
+					// -clamp off
+					//
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						if (strcmp(value, "on") == 0 || 
+							strcmp(value, "off") == 0)
+						{
+							ei_override_bool("options", "use_clamp", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+						}
+						else
+						{
+							ei_override_bool("options", "use_clamp", EI_TRUE);
+							ei_override_scalar("options", "clamp_value", (eiScalar)atof(value));
+						}
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -clamp\n");
+					}
+				}
+				else if (strcmp(argv[i], "-clamp_portal") == 0)
+				{
+					// -clamp_portal value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_bool("options", "clamp_portal", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -clamp_portal\n");
 					}
 				}
 				else if (strcmp(argv[i], "-filter") == 0)
@@ -1598,6 +1670,7 @@ int main_body(int argc, char *argv[])
 								}
 							}
 
+							ei_set_custom_trace(custom_trace);
 							ei_job_set_process(&(rp.base));
 							ei_timer_reset(&(rp.first_pixel_timer));
 							ei_timer_start(&(rp.first_pixel_timer));
@@ -1618,6 +1691,7 @@ int main_body(int argc, char *argv[])
 							}
 							ei_render_cleanup();
 							ei_job_set_process(NULL);
+							ei_set_custom_trace(NULL);
 						}
 					}
 				}
