@@ -264,11 +264,13 @@ EH_API void EH_add_mesh(EH_Context *ctx, const char *name, const EH_Mesh *mesh);
 struct EH_Texture
 {
 	const char *filename;	/**< The image filename */
-	float repeat;			/**< The repeat scale */
+	float repeat_u;			/**< The u repeat scale */
+	float repeat_v;			/**< The v repeat scale */
 
 	EH_Texture() :
 		filename(NULL),
-		repeat(1.0f)
+		repeat_u(1.0f),
+		repeat_v(1.0f)
 	{
 
 	}
@@ -463,6 +465,13 @@ struct EH_Sun
 	float soft_shadow;		/**< range is [1.0, 1000.0] */
 	EH_Vec2 dir;			/**< dir[0] is theta angle, 
 							     dir[1] is phi angle, both in radians */
+	EH_Sun() :
+		enabled(true),
+		intensity(1.0f),
+		soft_shadow(1.0f)
+	{
+
+	}
 };
 
 /** Set the current sun parameters.

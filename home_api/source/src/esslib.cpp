@@ -696,15 +696,15 @@ std::string AddLight(EssWriter& writer, const EH_Light& light, std::string &ligh
 	return instanceName;
 }
 
-std::string AddTexture(EssWriter& writer, const std::string texPath, const float repeat, const std::string texName, const std::string rootPath){
+std::string AddTexture(EssWriter& writer, const std::string texPath, const float repeat_u, float repeat_v, const std::string texName, const std::string rootPath){
 	if(texPath.empty())return "";
 
 	std::string uvgenName = texName + "_uvgen";
 	writer.BeginNode("max_stduv", uvgenName);
 	writer.AddToken("mapChannel", "uv0");
-	writer.AddScaler("uScale", repeat);
+	writer.AddScaler("uScale", repeat_u);
 	writer.AddBool("uWrap", true);
-	writer.AddScaler("vScale", repeat);
+	writer.AddScaler("vScale", repeat_v);
 	writer.AddBool("vWrap", true);
 	writer.EndNode();
 
@@ -723,15 +723,15 @@ std::string AddTexture(EssWriter& writer, const std::string texPath, const float
 	return stdoutName;
 }
 
-std::string AddAlphaTexture(EssWriter& writer, const std::string &texPath, const float repeat, const std::string &texName, const std::string &rootPath){
+std::string AddAlphaTexture(EssWriter& writer, const std::string &texPath, const float repeat_u, float repeat_v, const std::string &texName, const std::string &rootPath){
 	if(texPath.empty())return "";
 
 	std::string uvgenName = texName + "_uvgen";
 	writer.BeginNode("max_stduv", uvgenName);
 	writer.AddToken("mapChannel", "uv0");
-	writer.AddScaler("uScale", repeat);
+	writer.AddScaler("uScale", repeat_u);
 	writer.AddBool("uWrap", true);
-	writer.AddScaler("vScale", repeat);
+	writer.AddScaler("vScale", repeat_v);
 	writer.AddBool("vWrap", true);
 	writer.EndNode();
 
@@ -767,11 +767,11 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	std::string transparent_tex_node, diffuse_tex_node, normal_map_tex_node, specular_tex_node;
 	if(mat.diffuse_tex.filename)
 	{
-		diffuse_tex_node = AddTexture(writer, mat.diffuse_tex.filename, mat.diffuse_tex.repeat, matName + "_d", rootPath);
+		diffuse_tex_node = AddTexture(writer, mat.diffuse_tex.filename, mat.diffuse_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_d", rootPath);
 	}	
 	if(mat.bump_tex.filename)
 	{
-		normal_map_tex_node = AddTexture(writer, mat.bump_tex.filename, mat.bump_tex.repeat, matName + "_n", rootPath);
+		normal_map_tex_node = AddTexture(writer, mat.bump_tex.filename, mat.bump_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_n", rootPath);
 		if(mat.normal_bump)
 		{
 			normal_map_tex_node = AddNormalBump(writer, normal_map_tex_node);
@@ -779,11 +779,11 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	}
 	if(mat.specular_tex.filename)
 	{
-		specular_tex_node = AddTexture(writer, mat.specular_tex.filename, mat.specular_tex.repeat, matName + "_s", rootPath);
+		specular_tex_node = AddTexture(writer, mat.specular_tex.filename, mat.specular_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_s", rootPath);
 	}
 	if(mat.transp_tex.filename)
 	{
-		transparent_tex_node = AddTexture(writer, mat.transp_tex.filename, mat.transp_tex.repeat, matName + "_t", rootPath);
+		transparent_tex_node = AddTexture(writer, mat.transp_tex.filename, mat.transp_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_t", rootPath);
 	}
 
 	std::string ei_standard_node = matName + "_ei_stn";
