@@ -263,8 +263,7 @@ const char* AddLowOptions(EssWriter &writer)
 	writer.AddInt("volume_indirect_samples", 8);
 	writer.AddScaler("light_cutoff", 0.01);
 	writer.AddScaler("GI_cache_density", 1.0);
-	writer.AddInt("GI_cache_passes", 50);
-	writer.AddScaler("GI_cache_radius", 100);
+	writer.AddInt("GI_cache_passes", 50);	
 	writer.AddInt("GI_cache_points", 20);
 	writer.AddEnum("GI_cache_preview", "accurate");
 	writer.AddInt("diffuse_depth", 5);
