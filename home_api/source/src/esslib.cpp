@@ -231,7 +231,7 @@ const char* AddMediumOptions(EssWriter &writer)
 	writer.AddInt("GI_cache_passes", 50);
 	writer.AddScaler("GI_cache_radius", 30);
 	writer.AddInt("GI_cache_points", 5);
-	writer.AddBool("GI_cache_preview", false);
+	writer.AddEnum("GI_cache_preview", "off");
 	writer.AddInt("diffuse_depth", 5);
 	writer.AddInt("sum_depth", 10);
 	writer.AddBool("caustic", false);
@@ -266,7 +266,7 @@ const char* AddLowOptions(EssWriter &writer)
 	writer.AddInt("GI_cache_passes", 20);
 	writer.AddScaler("GI_cache_radius", 100);
 	writer.AddInt("GI_cache_points", 10);
-	writer.AddBool("GI_cache_preview", true);
+	writer.AddEnum("GI_cache_preview", "accurate");
 	writer.AddInt("diffuse_depth", 5);
 	writer.AddInt("sum_depth", 10);
 	writer.AddBool("caustic", false);
@@ -301,7 +301,7 @@ const char* AddHighOptions(EssWriter &writer)
 	writer.AddInt("GI_cache_passes", 100);
 	writer.AddScaler("GI_cache_radius", 30);
 	writer.AddInt("GI_cache_points", 5);
-	writer.AddBool("GI_cache_preview", false);
+	writer.AddEnum("GI_cache_preview", "off");
 	writer.AddInt("diffuse_depth", 5);
 	writer.AddInt("sum_depth", 10);
 	writer.AddBool("caustic", false);
@@ -335,7 +335,7 @@ const char* AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &op
 	writer.AddInt("GI_cache_passes", 100);
 	writer.AddScaler("GI_cache_radius", 30);
 	writer.AddInt("GI_cache_points", 5);
-	writer.AddBool("GI_cache_preview", false);
+	writer.AddEnum("GI_cache_preview", "off");
 	writer.AddInt("diffuse_depth", option.trace_diffuse_depth);
 	writer.AddInt("sum_depth", option.trace_total_depth);
 	writer.AddBool("caustic", false);
