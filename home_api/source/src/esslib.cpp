@@ -229,7 +229,6 @@ const char* AddMediumOptions(EssWriter &writer)
 	writer.AddScaler("light_cutoff", 0.01);
 	writer.AddScaler("GI_cache_density", 1.0);
 	writer.AddInt("GI_cache_passes", 50);
-	writer.AddScaler("GI_cache_radius", 30);
 	writer.AddInt("GI_cache_points", 5);
 	writer.AddEnum("GI_cache_preview", "off");
 	writer.AddInt("diffuse_depth", 5);
@@ -298,7 +297,6 @@ const char* AddHighOptions(EssWriter &writer)
 	writer.AddScaler("light_cutoff", 0.01);
 	writer.AddScaler("GI_cache_density", 1.0);
 	writer.AddInt("GI_cache_passes", 100);
-	writer.AddScaler("GI_cache_radius", 30);
 	writer.AddInt("GI_cache_points", 5);
 	writer.AddEnum("GI_cache_preview", "off");
 	writer.AddInt("diffuse_depth", 5);
@@ -332,7 +330,6 @@ const char* AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &op
 	writer.AddScaler("light_cutoff", 0.01);
 	writer.AddScaler("GI_cache_density", 1.0);
 	writer.AddInt("GI_cache_passes", 100);
-	writer.AddScaler("GI_cache_radius", 30);
 	writer.AddInt("GI_cache_points", 5);
 	writer.AddEnum("GI_cache_preview", "off");
 	writer.AddInt("diffuse_depth", option.trace_diffuse_depth);
