@@ -27,6 +27,9 @@ const char* g_inst_group_name = "mtoer_instgroup_00";
 //left hand to right hand matrix
 const eiMatrix l2r = ei_matrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1);
 
+std::string AddTexture(EssWriter& writer, const std::string texPath, const float repeat_u, float repeat_v, const std::string texName, const std::string rootPath);
+std::string AddNormalBump(EssWriter& writer, const std::string &normalMap);
+
 std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& envName, bool panorama, int panorama_size, bool is_lefthand)
 {	
 	std::string cubemap_len_str;
@@ -477,9 +480,9 @@ std::string AddBackground(EssWriter& writer, const std::string &hdri_name, const
 void CalDirectionFromSphereCoordinate(const eiVector2 &sphere_dir, eiVector &out_vector)
 {
 	//eiScalar neg_z_theta_rad = EI_PI - sphere_dir.x;
-	out_vector.x = fastsin(sphere_dir.x) * fastcos(sphere_dir.y);
-	out_vector.y = fastsin(sphere_dir.x) * fastsin(sphere_dir.y);
-	out_vector.z = fastcos(sphere_dir.x);
+	out_vector.x = std::sin(sphere_dir.x) * std::cos(sphere_dir.y);
+	out_vector.y = std::sin(sphere_dir.x) * std::sin(sphere_dir.y);
+	out_vector.z = std::cos(sphere_dir.x);
 }
 
 void SunMatrixLookToRH(const eiVector &dir, eiMatrix &in_matrix)
@@ -490,11 +493,11 @@ void SunMatrixLookToRH(const eiVector &dir, eiMatrix &in_matrix)
 	eiVector yaxis = cross(zaxis, xaxis);
 
 	in_matrix = ei_matrix(
-		xaxis.x, yaxis.x, zaxis.x, 0,
-		xaxis.y, yaxis.y, zaxis.y, 0,
-		xaxis.z, yaxis.z, zaxis.z, 0,
+		xaxis.x, xaxis.y, xaxis.z, 0,
+		yaxis.x, yaxis.y, yaxis.z, 0,
+		zaxis.x, zaxis.y, zaxis.z, 0,
 		0, 0, 0, 1
-	);
+		);
 }
 
 std::string AddSun(EssWriter& writer, const eiMatrix &mat, const float intensity, const eiVector sun_color, const float hardness, const int samples)
@@ -589,6 +592,111 @@ void EssExporter::AddAssemblyInstance(const char *name, const EH_AssemblyInstanc
 	mElInstances.push_back(name);
 }
 
+void EssExporter::AddMaterialFromEss(const EH_Material &mat, std::string matName, const char *essName)
+{
+	float eps = 0.0000001;
+	std::string transparent_tex_node, diffuse_tex_node, normal_map_tex_node, specular_tex_node;
+	if(mat.diffuse_tex.filename)
+	{
+		diffuse_tex_node = AddTexture(mWriter, mat.diffuse_tex.filename, mat.diffuse_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_d", mRootPath);
+	}	
+	if(mat.bump_tex.filename)
+	{
+		normal_map_tex_node = AddTexture(mWriter, mat.bump_tex.filename, mat.bump_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_n", mRootPath);
+		if(mat.normal_bump)
+		{
+			normal_map_tex_node = AddNormalBump(mWriter, normal_map_tex_node);
+		}
+	}
+	if(mat.specular_tex.filename)
+	{
+		specular_tex_node = AddTexture(mWriter, mat.specular_tex.filename, mat.specular_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_s", mRootPath);
+	}
+	if(mat.transp_tex.filename)
+	{
+		transparent_tex_node = AddTexture(mWriter, mat.transp_tex.filename, mat.transp_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_t", mRootPath);
+	}
+
+	std::string ei_standard_node = matName + "_ei_stn";
+	mWriter.BeginNode("max_ei_standard", ei_standard_node);
+
+	if(mat.diffuse_tex.filename != 0){
+		mWriter.LinkParam("diffuse_color", diffuse_tex_node, "result");
+	}
+	else
+	{
+		eiVector color = ei_vector(mat.diffuse_color[0], mat.diffuse_color[1], mat.diffuse_color[2]);
+		mWriter.AddColor("diffuse_color", color);
+	}
+	if(mat.bump_tex.filename != 0)
+	{		
+		mWriter.LinkParam("bump_map_bump", normal_map_tex_node, "result_bump");
+	}
+	if(mat.specular_tex.filename != 0)
+	{
+		mWriter.LinkParam("specular_color", specular_tex_node, "result");
+	}
+	else
+	{
+		eiVector color = ei_vector(mat.specular_color[0], mat.specular_color[1], mat.specular_color[2]);
+		mWriter.AddColor("specular_color", color);
+	}
+	if(mat.transp_tex.filename != 0)
+	{
+		mWriter.LinkParam("transparency_weight", transparent_tex_node, "result");
+	}
+
+	const int MTL_BUF_SIZE = 2048;
+	char *mtl_buf = NULL;
+	std::streampos size;
+	std::ifstream file(essName, std::ios::in|std::ios::binary|std::ios::ate);
+	if (file.is_open())
+	{
+		size = file.tellg();
+		int int_size = size;
+		mtl_buf = new char [int_size + 2];
+		file.seekg (0, std::ios::beg);
+		file.read (mtl_buf, size);
+		file.close();
+
+		mtl_buf[int_size] = '\n';
+		mtl_buf[int_size + 1] = '\0';
+	}
+
+	mWriter.AddCustomString(mtl_buf);
+
+	std::string max_input_mtl_name;
+	if (mat.backface_cull)
+	{
+		max_input_mtl_name = matName + "backface_shader";
+		mWriter.BeginNode( "backface_cull", max_input_mtl_name );
+		mWriter.LinkParam( "material", ei_standard_node, "result" );
+		mWriter.EndNode();
+	}
+	else
+	{
+		max_input_mtl_name = ei_standard_node;
+	}
+
+	std::string result_node = matName + "_result";
+	mWriter.BeginNode("max_result", result_node);
+	mWriter.LinkParam("input", max_input_mtl_name, "result");
+	mWriter.EndNode();
+
+	std::string mat_link_name = matName + "_osl";
+	std::vector<std::string> shaderNames;
+	shaderNames.push_back(result_node);
+	mWriter.BeginNode("osl_shadergroup", mat_link_name);
+	mWriter.AddRefGroup("nodes", shaderNames);
+	mWriter.EndNode();
+
+	mWriter.BeginNode("material", matName);
+	mWriter.AddRef("surface_shader", mat_link_name);
+	mWriter.EndNode();
+
+	mElInstances.push_back(matName);
+}
+
 void TranslateLight(EssWriter& writer, const char *pTypeName, const EH_Light &light, const std::string &lightName, const std::string &envName, const int samples){
 	writer.BeginNode(pTypeName, lightName);
 
@@ -605,20 +713,13 @@ void TranslateLight(EssWriter& writer, const char *pTypeName, const EH_Light &li
 		writer.AddScaler("intensity", light.intensity);
 	}
 	else if (light.type == EH_LIGHT_SPHERE)
-	{
-		if (!envName.empty())
-		{
-			writer.AddRef("map", envName);
-		}
+	{		
+		writer.AddScaler("radius", light.size[0]);
 		writer.AddColor("color", light_default_color);
 		writer.AddScaler("intensity", light.intensity);
 	}
 	else if (light.type == EH_LIGHT_QUAD)
 	{
-		if (!envName.empty())
-		{
-			writer.AddRef("map", envName);
-		}
 		writer.AddScaler("width", light.size[0] );
 		writer.AddScaler("height", light.size[1]);
 		writer.AddColor("color", light_default_color);
@@ -918,7 +1019,7 @@ bool EssExporter::AddSun(const EH_Sun &sun)
 	suncolor.x = sun.color[0];
 	suncolor.y = sun.color[1];
 	suncolor.z = sun.color[2];
-	eiVector2 sun_sphere_coord = ei_vector2(sun.dir[0], sun.dir[1]);
+	eiVector2 sun_sphere_coord = ei_vector2(sun.dir[0], sun.dir[1]);	
 	CalDirectionFromSphereCoordinate(sun_sphere_coord, sun_dir);
 	SunMatrixLookToRH(sun_dir, sun_mat);
 	if (mIsLeftHand)
