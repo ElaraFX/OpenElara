@@ -418,7 +418,7 @@ struct EH_Light
 	const char *ies_filename;	/**< Only used for IES light type */
 	float intensity;
 	EH_Vec2 size;				/**< Use size[0] as radius for sphere light, 
-									 Use size[0] as width and use size[0] as 
+									 Use size[0] as width and use size[1] as 
 									 height for quad light */
 	EH_Mat light_to_world;		/**< Light local space to world space transform */
 

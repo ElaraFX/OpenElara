@@ -649,7 +649,7 @@ void EssExporter::AddMaterialFromEss(const EH_Material &mat, std::string matName
 	const int MTL_BUF_SIZE = 2048;
 	char *mtl_buf = NULL;
 	std::streampos size;
-	std::ifstream file(essName, std::ios::in|std::ios::binary|std::ios::ate);
+	std::ifstream file((wchar_t*)essName, std::ios::in|std::ios::binary|std::ios::ate);
 	if (file.is_open())
 	{
 		size = file.tellg();
@@ -694,7 +694,7 @@ void EssExporter::AddMaterialFromEss(const EH_Material &mat, std::string matName
 	mWriter.AddRef("surface_shader", mat_link_name);
 	mWriter.EndNode();
 
-	mElInstances.push_back(matName);
+	mElMaterials.push_back(matName);
 }
 
 void TranslateLight(EssWriter& writer, const char *pTypeName, const EH_Light &light, const std::string &lightName, const std::string &envName, const int samples){

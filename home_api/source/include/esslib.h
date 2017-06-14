@@ -76,6 +76,7 @@ public:
 	bool AddSun(const EH_Sun &sun);
 	void SetTexPath(std::string &path);
 	void AddAssemblyInstance(const char *name, const EH_AssemblyInstance &assembly_inst);
+	void AddMaterialFromEss(const EH_Material &mat, std::string matName, const char *essName);
 	void EndExport();
 };
 
