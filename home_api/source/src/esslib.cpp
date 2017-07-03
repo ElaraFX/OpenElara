@@ -27,6 +27,8 @@ const char* g_inst_group_name = "mtoer_instgroup_00";
 //left hand to right hand matrix
 const eiMatrix l2r = ei_matrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1);
 
+bool g_check_normal = false;
+
 std::string AddTexture(EssWriter& writer, const std::string texPath, const float repeat_u, float repeat_v, const std::string texName, const std::string rootPath);
 std::string AddNormalBump(EssWriter& writer, const std::string &normalMap);
 
@@ -150,60 +152,11 @@ inline bool CheckVec3Big(eiVector &val)
 #define ER_TRIANGLE_AREA_EPS	0.000001f
 
 extern std::string utf16_to_utf8(const char* str);
-//std::string AddMeshData(EssWriter& writer, CElaraModel& model, const std::string &modelName, std::vector<std::string> &matName)
-//{
-//	IMesh* pMesh = model->m_Mesh;
-//	if (NULL == pMesh) return "";
-//
-//	g_xhome_mesh.LoadMesh(model, utf16_to_utf8(modelName.c_str()));
-//	if(g_xhome_mesh.error)return "";
-//
-//	//CDeviceMesh &mesh = pMesh->m_device_mesh;
-//	const std::string &itemID = modelName;
-//	writer.BeginNode("poly", itemID);
-//	writer.AddPointArray("pos_list", &g_xhome_mesh.positons[0], g_xhome_mesh.positons.size());
-//	if (model->m_type != 1)
-//	{
-//		writer.AddDeclare("vector[]", "N", "varying");
-//		writer.AddPointArray("N", &g_xhome_mesh.normals[0], g_xhome_mesh.normals.size());
-//	}
-//	writer.AddDeclare("vector[]", "uv0", "varying");
-//	writer.AddPointArray("uv0", &g_xhome_mesh.uvs[0], g_xhome_mesh.uvs.size());
-//	writer.AddIndexArray("triangle_list", &g_xhome_mesh.indexs[0], g_xhome_mesh.indexs.size(), false);
-//
-//	//bool isError;
-//	//writer.AddPointArray("pos_list", mesh->m_pvb, mesh->m_num_vers, get_layout_offset(mesh->m_pvb->m_layout_type, x3d_lt_position) / sizeof(FLOAT), isError);
-//	//if (!isError)
-//	//{
-//	//	writer.AddIndexArray("triangle_list", mesh->m_pib, mesh->m_num_faces, false);
-//	//	if (model->m_type != 1)
-//	//	{
-//	//		writer.AddDeclare("vector[]", "N", "varying");
-//	//		writer.AddVectorArray("N", mesh->m_pvb, mesh->m_num_vers, get_layout_offset(mesh->m_pvb->m_layout_type, x3d_lt_normal) / sizeof(FLOAT));
-//	//	}
-//
-//	//	writer.AddDeclare("vector[]", "uv0", "varying");
-//	//	writer.AddVector2Array("uv0", mesh->m_pvb, mesh->m_num_vers, get_layout_offset(mesh->m_pvb->m_layout_type, x3d_lt_tex1) / sizeof(FLOAT));
-//	//}	
-//
-//	writer.EndNode();
-//
-//	//Add Mesh instance
-//	std::string instanceName = itemID + instanceExt;
-//	writer.BeginNode("instance", instanceName);
-//	writer.AddRefGroup("mtl_list", matName);
-//	writer.AddRef("element",itemID);
-//	writer.AddMatrix("transform", model->m_wts * l2r);
-//	writer.AddMatrix("motion_transform", model->m_wts * l2r);
-//	writer.EndNode();
-//	return instanceName;
-//}
 
 const char* AddDefaultOptions(EssWriter& writer)
 {
 	static const char* optName = "GlobalOption";
 	writer.BeginNode("options", optName);
-	//writer.AddScaler("accel_mode", 0);
 	writer.AddBool("motion", false);
 	writer.AddBool("use_clamp", false);
 	writer.AddScaler("clamp_value", 20.0f);
@@ -265,8 +218,8 @@ const char* AddLowOptions(EssWriter &writer)
 	writer.AddInt("volume_indirect_samples", 8);
 	writer.AddScaler("light_cutoff", 0.01);
 	writer.AddScaler("GI_cache_density", 1.0);
-	writer.AddInt("GI_cache_passes", 50);	
-	writer.AddInt("GI_cache_points", 20);
+	writer.AddInt("GI_cache_passes", 200);	
+	writer.AddInt("GI_cache_points", 5);
 	writer.AddEnum("GI_cache_preview", "accurate");
 	writer.AddInt("diffuse_depth", 5);
 	writer.AddInt("sum_depth", 10);
@@ -282,6 +235,7 @@ const char* AddLowOptions(EssWriter &writer)
 	writer.AddScaler("shader_gamma", 2.2f);
 	writer.AddScaler("light_gamma", 2.2f);
 	writer.AddBool("exposure", false);
+
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
 	writer.EndNode();
@@ -679,8 +633,15 @@ void EssExporter::AddMaterialFromEss(const EH_Material &mat, std::string matName
 	}
 
 	std::string result_node = matName + "_result";
-	mWriter.BeginNode("max_result", result_node);
-	mWriter.LinkParam("input", max_input_mtl_name, "result");
+	if (g_check_normal)
+	{
+		mWriter.BeginNode("normal_check", result_node);
+	}
+	else
+	{
+		mWriter.BeginNode("max_result", result_node);
+		mWriter.LinkParam("input", max_input_mtl_name, "result");
+	}	
 	mWriter.EndNode();
 
 	std::string mat_link_name = matName + "_osl";
@@ -953,8 +914,16 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	}
 
 	std::string result_node = matName + "_result";
-	writer.BeginNode("max_result", result_node);
-	writer.LinkParam("input", max_input_mtl_name, "result");
+
+	if (g_check_normal)
+	{
+		writer.BeginNode("normal_check", result_node);
+	}
+	else
+	{
+		writer.BeginNode("max_result", result_node);
+		writer.LinkParam("input", max_input_mtl_name, "result");
+	}	
 	writer.EndNode();
 
 	std::string mat_link_name = matName + "_osl";
@@ -1064,7 +1033,7 @@ void EssExporter::AddHighOption()
 
 bool EssExporter::AddLight(const EH_Light& light, std::string &lightName, bool is_show_area)
 {
-	std::string instanceName = ::AddLight(mWriter, light, lightName, mEnvName, mRootPath, mLightSamples, is_show_area);
+	std::string instanceName = ::AddLight(mWriter, light, lightName, mEnvName, mRootPath, light.sample_num_coefficient * mLightSamples, is_show_area);
 	if (instanceName != "")
 	{
 		mElInstances.push_back(instanceName);

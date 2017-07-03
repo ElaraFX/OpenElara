@@ -201,7 +201,7 @@ struct EH_Camera
 	float far_clip;
 	uint_t image_width;
 	uint_t image_height;
-	EH_Mat view_to_world;	/**< View to world transform matrix */
+	EH_Mat view_to_world;	/**< View to world transform matrix,it's the inverse of view matrix. */
 	bool cubemap_render;	/**< Render a 6x1 cubemap? */
 	bool spherical_render;  /**< Render spherical map */
 	bool stereo;
@@ -421,10 +421,12 @@ struct EH_Light
 									 Use size[0] as width and use size[1] as 
 									 height for quad light */
 	EH_Mat light_to_world;		/**< Light local space to world space transform */
+	int sample_num_coefficient;    /**< Light sample num coefficient, default value is 1*/
 
 	EH_Light() :
 		ies_filename(NULL),
-		type(EH_LIGHT_SPHERE)
+		type(EH_LIGHT_SPHERE),
+		sample_num_coefficient(1)
 	{
 		memset(size, 0, sizeof(EH_Vec2));
 		memset(light_to_world, 0, sizeof(light_to_world));
