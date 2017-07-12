@@ -349,6 +349,11 @@ struct EH_Material
 	float ior;
 	float refract_glossiness;
 
+	/* Emission layer */
+	float emission_weight;
+	EH_RGB emission_color;
+	EH_Texture emission_tex;		/**< Emission texture */
+
 	EH_Material() :
 		backface_cull(false),
 		diffuse_weight(0.8f),
@@ -368,7 +373,8 @@ struct EH_Material
 		refract_weight(0.0f),
 		refract_invert_weight(false),
 		ior(1.5f),
-		refract_glossiness(0.0f)
+		refract_glossiness(0.0f),
+		emission_weight(0.0f)
 	{		
 		diffuse_color[0] = 1.0f; /* default diffuse color is red */
 		diffuse_color[1] = 0.0f;
@@ -385,6 +391,10 @@ struct EH_Material
 		refract_color[0] = 1.0f;
 		refract_color[1] = 1.0f;
 		refract_color[2] = 1.0f;
+
+		emission_color[0] = 1.0f;
+		emission_color[1] = 1.0f;
+		emission_color[2] = 1.0f;
 	}
 };
 
