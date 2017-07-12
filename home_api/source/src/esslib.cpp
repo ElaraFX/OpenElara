@@ -235,7 +235,6 @@ const char* AddLowOptions(EssWriter &writer)
 	writer.AddScaler("shader_gamma", 2.2f);
 	writer.AddScaler("light_gamma", 2.2f);
 	writer.AddBool("exposure", false);
-
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
 	writer.EndNode();
@@ -417,7 +416,7 @@ std::string AddBackground(EssWriter& writer, const std::string &hdri_name, const
 
 	writer.BeginNode("output_result", "global_environment");
 	writer.LinkParam("input", sky_shader, "result");	
-	writer.AddBool("env_emits_GI", false);
+	writer.AddBool("env_emits_GI", true);
 	writer.EndNode();
 
 	std::vector<std::string> names;
@@ -1057,6 +1056,20 @@ void EssExporter::AddLowOption()
 void EssExporter::AddHighOption()
 {
 	mOptionName = AddHighOptions(mWriter);
+}
+
+void EssExporter::SetExposure(const EH_Exposure &exposure)
+{
+	mWriter.BeginNode("options", mOptionName);
+		mWriter.AddBool("exposure", true);
+		mWriter.AddScaler("exposure_value", exposure.exposure_value);
+		mWriter.AddScaler("exposure_highlight", exposure.exposure_highlight);
+		mWriter.AddScaler("exposure_shadow", exposure.exposure_shadow);
+		mWriter.AddScaler("exposure_saturation", exposure.exposure_saturation);
+		mWriter.AddScaler("exposure_whitepoint", exposure.exposure_whitepoint);
+		mWriter.AddScaler("texture_gamma", exposure.texture_gamma);
+		mWriter.AddScaler("display_gamma", exposure.display_gamma);
+	mWriter.EndNode();
 }
 
 bool EssExporter::AddLight(const EH_Light& light, std::string &lightName, bool is_show_area)

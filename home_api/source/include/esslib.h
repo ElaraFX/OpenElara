@@ -70,6 +70,7 @@ public:
 	void AddMediumOption();
 	void AddLowOption();
 	void AddHighOption();
+	void SetExposure(const EH_Exposure &exposure);
 	bool AddDefaultMaterial();
 	void AddCustomOption(const EH_CustomRenderOptions &option);
 	bool AddBackground(const std::string &hdri_name, const float rotation, const float hdri_intensity);
