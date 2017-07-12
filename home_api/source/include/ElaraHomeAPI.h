@@ -192,6 +192,35 @@ EH_API void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt);
  */
 EH_API void EH_set_custom_render_options(EH_Context *ctx, const EH_CustomRenderOptions *opt);
 
+/** The final render image exposure setting.
+*/
+struct EH_Exposure
+{
+	float exposure_value;
+	float exposure_highlight;
+	float exposure_shadow;
+	float exposure_saturation;
+	float exposure_whitepoint;
+	float texture_gamma;
+	float display_gamma;
+
+	EH_Exposure() :
+		exposure_value(-1.0f),
+		exposure_highlight(0.05f),
+		exposure_shadow(0.1f),
+		exposure_saturation(1.4f),
+		exposure_whitepoint(6500.0f),
+		texture_gamma(2.2f),
+		display_gamma(2.2f)
+	{
+
+	}
+};
+
+/** Set render image exposure, you MUST call this function after set EH_RenderOptions
+*/
+EH_API void EH_set_exposure(EH_Context *ctx, const EH_Exposure *exposure);
+
 /** The camera data for user to fill
  */
 struct EH_Camera

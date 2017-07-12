@@ -390,6 +390,11 @@ void EH_set_custom_render_options(EH_Context *ctx, const EH_CustomRenderOptions 
 	reinterpret_cast<EssExporter*>(ctx)->AddCustomOption(*opt);
 }
 
+void EH_set_exposure(EH_Context *ctx, const EH_Exposure *exposure)
+{
+	reinterpret_cast<EssExporter*>(ctx)->SetExposure(*exposure);
+}
+
 void EH_set_camera(EH_Context *ctx, const EH_Camera *cam)
 {
 	reinterpret_cast<EssExporter*>(ctx)->AddCamera(*cam, false, 0);
