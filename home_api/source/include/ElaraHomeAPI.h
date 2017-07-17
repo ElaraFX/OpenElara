@@ -461,6 +461,7 @@ struct EH_Light
 									 height for quad light */
 	EH_Mat light_to_world;		/**< Light local space to world space transform */
 	int sample_num_coefficient;    /**< Light sample num coefficient, default value is 1*/
+	EH_Vec light_color;
 
 	EH_Light() :
 		ies_filename(NULL),
@@ -469,6 +470,10 @@ struct EH_Light
 	{
 		memset(size, 0, sizeof(EH_Vec2));
 		memset(light_to_world, 0, sizeof(light_to_world));
+
+		light_color[0] = 1.0f;
+		light_color[1] = 1.0f;
+		light_color[2] = 1.0f;
 	}
 };
 

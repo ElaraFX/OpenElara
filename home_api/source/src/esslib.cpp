@@ -673,7 +673,7 @@ void EssExporter::AddMaterialFromEss(const EH_Material &mat, std::string matName
 void TranslateLight(EssWriter& writer, const char *pTypeName, const EH_Light &light, const std::string &lightName, const std::string &envName, const int samples){
 	writer.BeginNode(pTypeName, lightName);
 
-	const eiVector light_default_color = ei_vector(1.0f, 1.0f, 1.0f);
+	const eiVector light_default_color = ei_vector(light.light_color[0], light.light_color[1], light.light_color[2]);
 	if (light.type == EH_LIGHT_PORTAL)
 	{
 		if (!envName.empty())
@@ -706,8 +706,8 @@ void TranslateLight(EssWriter& writer, const char *pTypeName, const EH_Light &li
 void TranslateIES(EssWriter& writer, const EH_Light &light, const std::string &lightName, const std::string &envName, const int samples)
 {
 	std::string filterName = lightName + "_filter";
-	std::string web_filename = light.ies_filename;	
-	eiVector color = ei_vector(1.0, 1.0, 1.0);
+	std::string web_filename = light.ies_filename;
+	const eiVector color = ei_vector(light.light_color[0], light.light_color[1], light.light_color[2]);
 
 	writer.BeginNode("std_light_filter", filterName);
 		writer.AddBool("use_near_atten", false);
@@ -718,8 +718,7 @@ void TranslateIES(EssWriter& writer, const EH_Light &light, const std::string &l
 		writer.AddScaler("far_stop", 200.0f);
 		writer.AddBool("use_web_dist", true);
 		writer.AddToken("web_filename", web_filename);
-		writer.AddScaler("web_scale", 1.0f);
-		writer.AddBool("web_normalize", true);
+		writer.AddScaler("web_scale", 0.000029f);
 	writer.EndNode();
 
 	writer.BeginNode("pointlight", lightName);
