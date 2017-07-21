@@ -549,11 +549,11 @@ void EssExporter::AddMaterialFromEss(const EH_Material &mat, std::string matName
 {
 	float eps = 0.0000001;
 	std::string transparent_tex_node, diffuse_tex_node, normal_map_tex_node, specular_tex_node, emission_tex_node;
-	if(mat.diffuse_tex.filename)
+	if(mat.diffuse_tex.filename && strlen(mat.diffuse_tex.filename) > 0)
 	{
 		diffuse_tex_node = AddTexture(mWriter, mat.diffuse_tex.filename, mat.diffuse_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_d", mRootPath);
 	}	
-	if(mat.bump_tex.filename)
+	if(mat.bump_tex.filename && strlen(mat.bump_tex.filename) > 0)
 	{
 		normal_map_tex_node = AddTexture(mWriter, mat.bump_tex.filename, mat.bump_tex.repeat_u, mat.bump_tex.repeat_v, matName + "_n", mRootPath);
 		if(mat.normal_bump)
@@ -561,15 +561,15 @@ void EssExporter::AddMaterialFromEss(const EH_Material &mat, std::string matName
 			normal_map_tex_node = AddNormalBump(mWriter, normal_map_tex_node);
 		}
 	}
-	if(mat.specular_tex.filename)
+	if(mat.specular_tex.filename && strlen(mat.specular_tex.filename) > 0)
 	{
 		specular_tex_node = AddTexture(mWriter, mat.specular_tex.filename, mat.specular_tex.repeat_u, mat.specular_tex.repeat_v, matName + "_s", mRootPath);
 	}
-	if(mat.transp_tex.filename)
+	if(mat.transp_tex.filename && strlen(mat.transp_tex.filename) > 0)
 	{
 		transparent_tex_node = AddTexture(mWriter, mat.transp_tex.filename, mat.transp_tex.repeat_u, mat.transp_tex.repeat_v, matName + "_t", mRootPath);
 	}
-	if(mat.emission_tex.filename)
+	if(mat.emission_tex.filename && strlen(mat.emission_tex.filename) > 0)
 	{
 		emission_tex_node = AddTexture(mWriter, mat.emission_tex.filename, mat.emission_tex.repeat_u, mat.emission_tex.repeat_v, matName + "_e", mRootPath);
 	}
@@ -577,7 +577,7 @@ void EssExporter::AddMaterialFromEss(const EH_Material &mat, std::string matName
 	std::string ei_standard_node = matName + "_ei_stn";
 	mWriter.BeginNode("max_ei_standard", ei_standard_node);
 
-	if(mat.diffuse_tex.filename != 0){
+	if(mat.diffuse_tex.filename != 0 && strlen(mat.diffuse_tex.filename) > 0){
 		mWriter.LinkParam("diffuse_color", diffuse_tex_node, "result");
 	}
 	else
@@ -585,11 +585,11 @@ void EssExporter::AddMaterialFromEss(const EH_Material &mat, std::string matName
 		eiVector color = ei_vector(mat.diffuse_color[0], mat.diffuse_color[1], mat.diffuse_color[2]);
 		mWriter.AddColor("diffuse_color", color);
 	}
-	if(mat.bump_tex.filename != 0)
+	if(mat.bump_tex.filename != 0 && strlen(mat.bump_tex.filename) > 0)
 	{		
 		mWriter.LinkParam("bump_map_bump", normal_map_tex_node, "result_bump");
 	}
-	if(mat.specular_tex.filename != 0)
+	if(mat.specular_tex.filename != 0 && strlen(mat.specular_tex.filename) > 0)
 	{
 		mWriter.LinkParam("specular_color", specular_tex_node, "result");
 	}
@@ -598,11 +598,11 @@ void EssExporter::AddMaterialFromEss(const EH_Material &mat, std::string matName
 		eiVector color = ei_vector(mat.specular_color[0], mat.specular_color[1], mat.specular_color[2]);
 		mWriter.AddColor("specular_color", color);
 	}
-	if(mat.transp_tex.filename != 0)
+	if(mat.transp_tex.filename != 0 && strlen(mat.transp_tex.filename) > 0)
 	{
 		mWriter.LinkParam("transparency_weight", transparent_tex_node, "result");
 	}
-	if(mat.emission_tex.filename != 0)
+	if(mat.emission_tex.filename != 0 && strlen(mat.emission_tex.filename) > 0)
 	{
 		mWriter.LinkParam("emission_weight", emission_tex_node, "result");
 	}
@@ -834,11 +834,11 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 {
 	float eps = 0.0000001;
 	std::string transparent_tex_node, diffuse_tex_node, normal_map_tex_node, specular_tex_node, emission_tex_node;
-	if(mat.diffuse_tex.filename)
+	if(mat.diffuse_tex.filename && strlen(mat.diffuse_tex.filename) > 0)
 	{
 		diffuse_tex_node = AddTexture(writer, mat.diffuse_tex.filename, mat.diffuse_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_d", rootPath);
 	}	
-	if(mat.bump_tex.filename)
+	if(mat.bump_tex.filename && strlen(mat.bump_tex.filename) > 0)
 	{
 		normal_map_tex_node = AddTexture(writer, mat.bump_tex.filename, mat.bump_tex.repeat_u, mat.bump_tex.repeat_v, matName + "_n", rootPath);
 		if(mat.normal_bump)
@@ -846,15 +846,15 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 			normal_map_tex_node = AddNormalBump(writer, normal_map_tex_node);
 		}
 	}
-	if(mat.specular_tex.filename)
+	if(mat.specular_tex.filename && strlen(mat.specular_tex.filename) > 0)
 	{
 		specular_tex_node = AddTexture(writer, mat.specular_tex.filename, mat.specular_tex.repeat_u, mat.specular_tex.repeat_v, matName + "_s", rootPath);
 	}
-	if(mat.transp_tex.filename)
+	if(mat.transp_tex.filename && strlen(mat.transp_tex.filename) > 0)
 	{
 		transparent_tex_node = AddTexture(writer, mat.transp_tex.filename, mat.transp_tex.repeat_u, mat.transp_tex.repeat_v, matName + "_t", rootPath);
 	}
-	if(mat.emission_tex.filename)
+	if(mat.emission_tex.filename && strlen(mat.emission_tex.filename) > 0)
 	{
 		emission_tex_node = AddTexture(writer, mat.emission_tex.filename, mat.emission_tex.repeat_u, mat.emission_tex.repeat_v, matName + "_e", rootPath);
 	}
@@ -862,7 +862,7 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	std::string ei_standard_node = matName + "_ei_stn";
 	writer.BeginNode("max_ei_standard", ei_standard_node);
 
-	if(mat.diffuse_tex.filename != 0){
+	if(mat.diffuse_tex.filename != 0 && strlen(mat.diffuse_tex.filename) > 0){
 		writer.LinkParam("diffuse_color", diffuse_tex_node, "result");
 	}
 	else
@@ -870,11 +870,11 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 		eiVector color = ei_vector(mat.diffuse_color[0], mat.diffuse_color[1], mat.diffuse_color[2]);
 		writer.AddColor("diffuse_color", color);
 	}
-	if(mat.bump_tex.filename != 0)
+	if(mat.bump_tex.filename != 0 && strlen(mat.bump_tex.filename) > 0)
 	{		
 		writer.LinkParam("bump_map_bump", normal_map_tex_node, "result_bump");
 	}
-	if(mat.specular_tex.filename != 0)
+	if(mat.specular_tex.filename != 0 && strlen(mat.specular_tex.filename) > 0)
 	{
 		writer.LinkParam("specular_color", specular_tex_node, "result");
 	}
@@ -883,11 +883,11 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 		eiVector color = ei_vector(mat.specular_color[0], mat.specular_color[1], mat.specular_color[2]);
 		writer.AddColor("specular_color", color);
 	}
-	if(mat.transp_tex.filename != 0)
+	if(mat.transp_tex.filename != 0 && strlen(mat.transp_tex.filename) > 0)
 	{
 		writer.LinkParam("transparency_weight", transparent_tex_node, "result");
 	}
-	if(mat.emission_tex.filename != 0)
+	if(mat.emission_tex.filename != 0 && strlen(mat.emission_tex.filename) > 0)
 	{
 		writer.LinkParam("emission_weight", emission_tex_node, "result");
 	}
