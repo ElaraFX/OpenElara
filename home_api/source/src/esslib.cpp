@@ -911,6 +911,7 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	eiVector reflection_color = ei_vector(mat.mirror_color[0], mat.mirror_color[1], mat.mirror_color[2]);
 	writer.AddScaler("reflection_weight", mat.mirror_weight);
 	writer.AddColor("reflection_color", reflection_color);
+	writer.AddScaler("fresnel_ior", mat.mirror_fresnel);
 
 	eiVector refraction_color = ei_vector(mat.refract_color[0], mat.refract_color[1], mat.refract_color[2]);
 	writer.AddColor("refraction_color", refraction_color);
