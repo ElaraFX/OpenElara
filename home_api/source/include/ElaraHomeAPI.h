@@ -200,18 +200,14 @@ struct EH_Exposure
 	float exposure_highlight;
 	float exposure_shadow;
 	float exposure_saturation;
-	float exposure_whitepoint;
-	float texture_gamma;
-	float display_gamma;
+	float exposure_whitepoint;	
 
 	EH_Exposure() :
 		exposure_value(-1.0f),
 		exposure_highlight(0.05f),
 		exposure_shadow(0.1f),
 		exposure_saturation(1.4f),
-		exposure_whitepoint(6500.0f),
-		texture_gamma(2.2f),
-		display_gamma(2.2f)
+		exposure_whitepoint(6500.0f)
 	{
 
 	}
@@ -220,6 +216,24 @@ struct EH_Exposure
 /** Set render image exposure, you MUST call this function after set EH_RenderOptions
 */
 EH_API void EH_set_exposure(EH_Context *ctx, const EH_Exposure *exposure);
+
+/** The final render image gamma setting.
+*/
+struct EH_Gamma
+{
+	float texture_gamma;
+	float display_gamma;
+
+	EH_Gamma() :
+		texture_gamma(2.2f),
+		display_gamma(2.2f)
+	{
+
+	}
+};
+/** Set render image gamma, you MUST call this function after set EH_RenderOptions
+*/
+EH_API void EH_set_gamma(EH_Context *ctx, const EH_Gamma *gamma);
 
 /** The camera data for user to fill
  */

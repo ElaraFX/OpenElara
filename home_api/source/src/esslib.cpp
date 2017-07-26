@@ -1106,8 +1106,14 @@ void EssExporter::SetExposure(const EH_Exposure &exposure)
 		mWriter.AddScaler("exposure_shadow", exposure.exposure_shadow);
 		mWriter.AddScaler("exposure_saturation", exposure.exposure_saturation);
 		mWriter.AddScaler("exposure_whitepoint", exposure.exposure_whitepoint);
-		mWriter.AddScaler("texture_gamma", exposure.texture_gamma);
-		mWriter.AddScaler("display_gamma", exposure.display_gamma);
+	mWriter.EndNode();
+}
+
+void EssExporter::SetGamma(const EH_Gamma &gamma)
+{
+	mWriter.BeginNode("options", mOptionName);	
+	mWriter.AddScaler("texture_gamma", gamma.texture_gamma);
+	mWriter.AddScaler("display_gamma", gamma.display_gamma);
 	mWriter.EndNode();
 }
 

@@ -395,6 +395,11 @@ void EH_set_exposure(EH_Context *ctx, const EH_Exposure *exposure)
 	reinterpret_cast<EssExporter*>(ctx)->SetExposure(*exposure);
 }
 
+void EH_set_gamma(EH_Context *ctx, const EH_Gamma *gamma)
+{
+	reinterpret_cast<EssExporter*>(ctx)->SetGamma(*gamma);
+}
+
 void EH_set_camera(EH_Context *ctx, const EH_Camera *cam)
 {
 	reinterpret_cast<EssExporter*>(ctx)->AddCamera(*cam, false, 0);
