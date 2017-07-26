@@ -157,60 +157,6 @@ const char* AddDefaultOptions(EssWriter& writer)
 {
 	static const char* optName = "GlobalOption";
 	writer.BeginNode("options", optName);
-	writer.AddBool("motion", false);
-	writer.AddBool("use_clamp", false);
-	writer.AddScaler("clamp_value", 20.0f);
-	writer.AddBool("displace", false);
-	writer.AddBool("caustic", false);
-	writer.AddEnum("engine", "GI cache");
-	writer.AddBool("GI_cache_no_leak", true);
-	writer.AddScaler("display_gamma", 2.2f);
-	writer.AddScaler("texture_gamma", 2.2f);
-	writer.AddScaler("shader_gamma", 2.2f);
-	writer.AddScaler("light_gamma", 2.2f);
-	writer.AddBool("exposure", false);
-	writer.EndNode();
-	return optName;
-}
-
-const char* AddMediumOptions(EssWriter &writer)
-{
-	static const char* optName = "GlobalMediumOption";
-	writer.BeginNode("options", optName);
-	writer.AddInt("min_samples", -3);
-	writer.AddInt("max_samples", 16);
-	writer.AddInt("diffuse_samples", 16);
-	writer.AddInt("sss_samples", 64);
-	writer.AddInt("volume_indirect_samples", 8);
-	writer.AddScaler("light_cutoff", 0.01);
-	writer.AddScaler("GI_cache_density", 1.0);
-	writer.AddInt("GI_cache_passes", 50);
-	writer.AddInt("GI_cache_points", 5);
-	writer.AddEnum("GI_cache_preview", "off");
-	writer.AddInt("diffuse_depth", 5);
-	writer.AddInt("sum_depth", 10);
-	writer.AddBool("caustic", false);
-	writer.AddBool("motion", false);
-	writer.AddBool("use_clamp", false);
-	writer.AddScaler("clamp_value", 20.0f);
-	writer.AddBool("displace", false);	
-	writer.AddEnum("engine", "GI cache");
-	writer.AddBool("GI_cache_no_leak", true);
-	writer.AddScaler("display_gamma", 2.2f);
-	writer.AddScaler("texture_gamma", 2.2f);
-	writer.AddScaler("shader_gamma", 2.2f);
-	writer.AddScaler("light_gamma", 2.2f);
-	writer.AddBool("exposure", false);
-	writer.AddScaler("GI_cache_screen_scale", 1.0f);
-	writer.AddScaler("GI_cache_radius", 0.0f);
-	writer.EndNode();
-	return optName;
-}
-
-const char* AddLowOptions(EssWriter &writer)
-{
-	static const char* optName = "GlobalLowOption";
-	writer.BeginNode("options", optName);
 	writer.AddInt("min_samples", -3);
 	writer.AddInt("max_samples", 16);
 	writer.AddInt("diffuse_samples", 8);
@@ -241,20 +187,20 @@ const char* AddLowOptions(EssWriter &writer)
 	return optName;
 }
 
-const char* AddHighOptions(EssWriter &writer)
+const char* AddMediumOptions(EssWriter &writer)
 {
-	static const char* optName = "GlobalHighOption";
+	static const char* optName = "GlobalMediumOption";
 	writer.BeginNode("options", optName);
 	writer.AddInt("min_samples", -3);
-	writer.AddInt("max_samples", 64);
-	writer.AddInt("diffuse_samples", 64);
-	writer.AddInt("sss_samples", 64);
+	writer.AddInt("max_samples", 16);
+	writer.AddInt("diffuse_samples", 8);
+	writer.AddInt("sss_samples", 16);
 	writer.AddInt("volume_indirect_samples", 8);
 	writer.AddScaler("light_cutoff", 0.01);
 	writer.AddScaler("GI_cache_density", 1.0);
-	writer.AddInt("GI_cache_passes", 100);
+	writer.AddInt("GI_cache_passes", 100);	
 	writer.AddInt("GI_cache_points", 5);
-	writer.AddEnum("GI_cache_preview", "off");
+	writer.AddEnum("GI_cache_preview", "accurate");
 	writer.AddInt("diffuse_depth", 5);
 	writer.AddInt("sum_depth", 10);
 	writer.AddBool("caustic", false);
@@ -268,6 +214,75 @@ const char* AddHighOptions(EssWriter &writer)
 	writer.AddScaler("texture_gamma", 2.2f);
 	writer.AddScaler("shader_gamma", 2.2f);
 	writer.AddScaler("light_gamma", 2.2f);
+	writer.AddBool("exposure", false);
+	writer.AddScaler("GI_cache_screen_scale", 1.0f);
+	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.EndNode();
+	return optName;
+}
+
+const char* AddLowOptions(EssWriter &writer)
+{
+	static const char* optName = "GlobalLowOption";
+	writer.BeginNode("options", optName);
+	writer.AddInt("min_samples", -3);
+	writer.AddInt("max_samples", 1);
+	writer.AddInt("diffuse_samples", 8);
+	writer.AddInt("sss_samples", 16);
+	writer.AddInt("volume_indirect_samples", 8);
+	writer.AddScaler("light_cutoff", 0.01);
+	writer.AddScaler("GI_cache_density", 1.0);
+	writer.AddInt("GI_cache_passes", 30);	
+	writer.AddInt("GI_cache_points", 5);
+	writer.AddEnum("GI_cache_preview", "accurate");
+	writer.AddInt("diffuse_depth", 5);
+	writer.AddInt("sum_depth", 10);
+	writer.AddBool("caustic", false);
+	writer.AddBool("motion", false);
+	writer.AddBool("use_clamp", false);
+	writer.AddScaler("clamp_value", 20.0f);
+	writer.AddBool("displace", false);	
+	writer.AddEnum("engine", "GI cache");
+	writer.AddBool("GI_cache_no_leak", true);
+	writer.AddScaler("display_gamma", 2.2f);
+	writer.AddScaler("texture_gamma", 2.2f);
+	writer.AddScaler("shader_gamma", 2.2f);
+	writer.AddScaler("light_gamma", 2.2f);
+	writer.AddBool("exposure", false);
+	writer.AddScaler("GI_cache_screen_scale", 1.0f);
+	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.EndNode();
+	return optName;
+}
+
+const char* AddHighOptions(EssWriter &writer)
+{
+	static const char* optName = "GlobalHighOption";
+	writer.BeginNode("options", optName);
+	writer.AddInt("min_samples", -3);
+	writer.AddInt("max_samples", 64);
+	writer.AddInt("diffuse_samples", 8);
+	writer.AddInt("sss_samples", 16);
+	writer.AddInt("volume_indirect_samples", 8);
+	writer.AddScaler("light_cutoff", 0.01);
+	writer.AddScaler("GI_cache_density", 1.0);
+	writer.AddInt("GI_cache_passes", 150);	
+	writer.AddInt("GI_cache_points", 5);
+	writer.AddEnum("GI_cache_preview", "accurate");
+	writer.AddInt("diffuse_depth", 5);
+	writer.AddInt("sum_depth", 10);
+	writer.AddBool("caustic", false);
+	writer.AddBool("motion", false);
+	writer.AddBool("use_clamp", false);
+	writer.AddScaler("clamp_value", 20.0f);
+	writer.AddBool("displace", false);	
+	writer.AddEnum("engine", "GI cache");
+	writer.AddBool("GI_cache_no_leak", true);
+	writer.AddScaler("display_gamma", 2.2f);
+	writer.AddScaler("texture_gamma", 2.2f);
+	writer.AddScaler("shader_gamma", 2.2f);
+	writer.AddScaler("light_gamma", 2.2f);
+	writer.AddBool("exposure", false);
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
 	writer.EndNode();
