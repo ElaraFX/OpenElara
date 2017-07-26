@@ -33,6 +33,7 @@
 const int GET_RENDER_DATA_PERIOD = 100;
 
 eiBool g_abort_render = EI_FALSE;
+eiBool g_is_render_finished = EI_TRUE;
 
 /* 是否显示面光源，调试用 */
 eiBool g_show_portal_light_area = EI_FALSE;
@@ -444,11 +445,13 @@ EI_THREAD_FUNC render_callback(void *param)
 {
 	eiRenderParameters *render_params = (eiRenderParameters *)param;
 
+	g_is_render_finished = EI_FALSE;
 	ei_job_register_thread();
 
 	ei_render_run(render_params->root_instgroup, render_params->camera_inst, render_params->options);
 
 	ei_job_unregister_thread();
+	g_is_render_finished = EI_TRUE;
 
 	return (EI_THREAD_FUNC_RESULT)EI_TRUE;
 }
@@ -465,7 +468,15 @@ bool WindowProcOnRendering(void *param, bool is_abort_render, EH_display_callbac
 		return false;
 	}
 
-	const eiScalar job_percent = (eiScalar)ei_job_get_percent();	
+	eiScalar job_percent;
+	if (g_is_render_finished)
+	{
+		job_percent = 100.0f;
+	}
+	else
+	{
+		job_percent = (eiScalar)ei_job_get_percent();
+	}
 
 	if (display_cb)
 	{
@@ -500,8 +511,8 @@ bool WindowProcOnRendering(void *param, bool is_abort_render, EH_display_callbac
 			rp->last_job_percent = job_percent;
 		}
 	}
-	//return job_percent < 100.0f;
-	return job_percent < 99.5f; //到不了100%，后面看看
+
+	return job_percent < 100.0f;
 }
 
 void EH_set_display_callback(EH_Context *ctx, EH_display_callback cb)
