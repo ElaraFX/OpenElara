@@ -51,6 +51,7 @@ private:
 	int mLightSamples;
 	bool mCheckNormal;
 	bool mIsLeftHand;
+	bool mUseDisplacement;
 
 public:
 	EH_display_callback display_callback;

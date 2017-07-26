@@ -354,6 +354,10 @@ struct EH_Material
 	EH_RGB emission_color;
 	EH_Texture emission_tex;		/**< Emission texture */
 
+	/* Displace layer */
+	float displace_weight;
+	EH_Texture displace_tex;
+
 	EH_Material() :
 		backface_cull(false),
 		diffuse_weight(0.8f),
@@ -374,7 +378,8 @@ struct EH_Material
 		refract_invert_weight(false),
 		ior(1.5f),
 		refract_glossiness(0.0f),
-		emission_weight(0.0f)
+		emission_weight(0.0f),
+		displace_weight(0.0f)
 	{		
 		diffuse_color[0] = 1.0f; /* default diffuse color is red */
 		diffuse_color[1] = 0.0f;

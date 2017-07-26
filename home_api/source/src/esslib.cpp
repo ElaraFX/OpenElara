@@ -497,7 +497,8 @@ EssExporter::EssExporter(void) :
 	display_callback(NULL),
 	progress_callback(NULL),
 	log_callback(NULL),
-	mIsLeftHand(false)
+	mIsLeftHand(false),
+	mUseDisplacement(false)
 {
 	mLightSamples = 16;
 }
@@ -830,10 +831,10 @@ std::string AddNormalBump(EssWriter& writer, const std::string &normalMap){
 	return normalName;
 }
 
-std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &matName, const std::string &rootPath)
+std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &matName, const std::string &rootPath, bool &use_displace)
 {
 	float eps = 0.0000001;
-	std::string transparent_tex_node, diffuse_tex_node, normal_map_tex_node, specular_tex_node, emission_tex_node;
+	std::string transparent_tex_node, diffuse_tex_node, normal_map_tex_node, specular_tex_node, emission_tex_node, displace_tex_node;
 	if(mat.diffuse_tex.filename && strlen(mat.diffuse_tex.filename) > 0)
 	{
 		diffuse_tex_node = AddTexture(writer, mat.diffuse_tex.filename, mat.diffuse_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_d", rootPath);
@@ -857,6 +858,10 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	if(mat.emission_tex.filename && strlen(mat.emission_tex.filename) > 0)
 	{
 		emission_tex_node = AddTexture(writer, mat.emission_tex.filename, mat.emission_tex.repeat_u, mat.emission_tex.repeat_v, matName + "_e", rootPath);
+	}
+	if(mat.displace_tex.filename && strlen(mat.displace_tex.filename) > 0)
+	{
+		displace_tex_node = AddTexture(writer, mat.displace_tex.filename, mat.displace_tex.repeat_u, mat.displace_tex.repeat_v, matName + "_disp", rootPath);
 	}
 
 	std::string ei_standard_node = matName + "_ei_stn";
@@ -896,6 +901,11 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 		eiVector color = ei_vector(mat.emission_color[0], mat.emission_color[1], mat.emission_color[2]);
 		writer.AddColor("emission_color", color);
 	}
+	if(mat.displace_tex.filename && strlen(mat.displace_tex.filename) > 0)
+	{
+		writer.LinkParam("displace_map", displace_tex_node, "result");
+		use_displace = true;
+	}
 
 	writer.AddScaler("diffuse_weight", mat.diffuse_weight);
 	writer.AddScaler("roughness", mat.roughness);
@@ -924,6 +934,7 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	writer.AddInt("transparency_invert_weight", mat.transp_invert_weight);
 
 	writer.AddScaler("emission_weight", mat.emission_weight);
+	writer.AddScaler("displace_weight", mat.displace_weight);
 
 	writer.EndNode();
 
@@ -962,6 +973,12 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	
 	writer.BeginNode("material", matName);
 	writer.AddRef("surface_shader", mat_link_name);
+
+	if(use_displace)
+	{
+		writer.AddRef("displace_shader", mat_link_name);
+	}
+
 	writer.EndNode();
 
 	return matName;
@@ -1033,7 +1050,14 @@ bool EssExporter::AddSun(const EH_Sun &sun)
 
 bool EssExporter::AddMaterial(const EH_Material& mat, std::string &matName)
 {
-	std::string materialName = ::AddMaterial(mWriter, mat, matName, mRootPath);
+	bool use_displace = false;
+	std::string materialName = ::AddMaterial(mWriter, mat, matName, mRootPath, use_displace);
+
+	if (use_displace)
+	{
+		mUseDisplacement = true;
+	}
+
 	if (materialName != "")
 	{
 		mElMaterials.push_back(materialName);
@@ -1161,13 +1185,34 @@ void EssExporter::AddMeshInstance(const char *instName, const EH_MeshInstance &m
 void EssExporter::EndExport()
 {
 	printf("EndExport\n");
+	const char* optName = mOptionName.empty() ? AddMediumOptions(mWriter) : mOptionName.c_str();
+
+	if (mUseDisplacement)
+	{
+		const char *global_approx = "GlobalApproxDisplace";
+		mWriter.BeginNode("approx", global_approx);
+		mWriter.AddInt("method", 1);
+		mWriter.AddBool("view_dep", true);
+		mWriter.AddScaler("edge_length", 1.0f);
+		mWriter.AddScaler("motion_factor", 16.0f);
+		mWriter.AddInt("max_subdiv", 7);
+		mWriter.EndNode();
+
+		mWriter.BeginNode("options", optName);
+		mWriter.AddBool("displace", true);
+		mWriter.AddScaler("max_displace", 1.0f);
+		mWriter.AddRef("approx", global_approx);
+		mWriter.EndNode();
+
+		mUseDisplacement = false;
+	}
+
 	mWriter.BeginNode("instgroup", g_inst_group_name);
 	mWriter.AddRefGroup("instance_list", mElInstances);
 	mWriter.EndNode();
-
-	const char* optName = mOptionName.empty() ? AddMediumOptions(mWriter) : mOptionName.c_str();
+	
 	mWriter.AddRenderCommand(g_inst_group_name, mCamName.c_str(), optName);
-	mWriter.Close();
+	mWriter.Close();		
 
 	mElInstances.clear();
 }
