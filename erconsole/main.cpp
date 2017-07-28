@@ -362,15 +362,6 @@ static void rprocess_job_finished(
 		return;
 	}
 
-	if (pJob->pass_id <= EI_PASS_GI_CACHE_PROGRESSIVE)
-	{
-		eiInt GI_cache_samples = (EI_PASS_GI_CACHE_PROGRESSIVE + 1) - pJob->pass_id;
-		if ((GI_cache_samples % 4) != 0)
-		{
-			return;
-		}
-	}
-
     eiFrameBufferCache	infoFrameBufferCache;
 	eiFrameBufferCache	colorFrameBufferCache;
     eiFrameBufferCache  opacityFrameBufferCache;
@@ -737,9 +728,10 @@ int main(int argc, const char *argv[])
     param_type_map["accel_mode"] = is_ei_enum;
     param_type_map["GI_cache_density"] = is_ei_scalar;
     param_type_map["GI_cache_radius"] = is_ei_scalar;
+	param_type_map["GI_cache_screen_scale"] = is_ei_scalar;
     param_type_map["GI_cache_passes"] = is_ei_int;
     param_type_map["GI_cache_points"] = is_ei_int;
-    param_type_map["GI_cache_preview"] = is_ei_bool;
+    param_type_map["GI_cache_preview"] = is_ei_enum;
     param_type_map["display_gamma"] = is_ei_scalar;
     param_type_map["texture_gamma"] = is_ei_scalar;
     param_type_map["shader_gamma"] = is_ei_scalar;
@@ -778,9 +770,15 @@ int main(int argc, const char *argv[])
 	fflush(stdout);
 	-- argc, ++ argv;
 
-	if (argc == 1 && strcmp(argv[0], "-licsvr") == 0)
+	if ((argc == 1 || argc == 2) && strcmp(argv[0], "-licsvr") == 0)
 	{
-		ei_run_license_server();
+		const char *uuid_str = NULL;
+		if (argc == 2)
+		{
+			uuid_str = argv[1];
+		}
+
+		ei_run_license_server(uuid_str);
 	}
 	else if (argc == 1 && strcmp(argv[0], "-id") == 0)
 	{

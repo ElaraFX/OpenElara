@@ -1068,14 +1068,27 @@ void MainWindow::SetLayout(int layout)
 
 void MainWindow::on_tvPreset_itemDoubleClicked(QTreeWidgetItem *item, int)
 {
-    if (item->text(1).compare("on", Qt::CaseInsensitive) == 0
-            || item->text(1).compare("off", Qt::CaseInsensitive) == 0)
+    if (item->text(1).compare("off", Qt::CaseInsensitive) == 0
+            || item->text(1).compare("fast", Qt::CaseInsensitive) == 0
+			|| item->text(1).compare("accurate", Qt::CaseInsensitive) == 0)
     {
         QComboBox* boolCombo = new QComboBox(ui->tvPreset);
-        boolCombo->addItem("on");
-        boolCombo->addItem("off");
-        boolCombo->setCurrentIndex(item->text(1).compare("on", Qt::CaseInsensitive) == 0
-                                   ? 0 : 1);
+		boolCombo->addItems(QStringList() << "off"
+                             << "fast"
+                             << "accurate");
+
+		 if (item->text(1).compare("off", Qt::CaseInsensitive) == 0)
+        {
+            boolCombo->setCurrentIndex(0);
+        }
+        else if (item->text(1).compare("fast", Qt::CaseInsensitive) == 0)
+        {
+            boolCombo->setCurrentIndex(1);
+        }
+        else if (item->text(1).compare("accurate", Qt::CaseInsensitive) == 0)
+        {
+            boolCombo->setCurrentIndex(2);
+        }
         ui->tvPreset->setItemWidget(item, 1, boolCombo);
     }
     if (item->text(0).compare("filter", Qt::CaseInsensitive) == 0)
