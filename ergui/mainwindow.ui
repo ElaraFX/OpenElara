@@ -1,0 +1,1282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1701</width>
+    <height>960</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
+  <property name="contextMenuPolicy">
+   <enum>Qt::PreventContextMenu</enum>
+  </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
+  <property name="windowTitle">
+   <string>Elara Render</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="resource.qrc">
+    <normaloff>:/images/app_logo</normaloff>:/images/app_logo</iconset>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <item row="0" column="0">
+     <widget class="QCustomLabel" name="imageViewer">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+        <pointsize>80</pointsize>
+        <weight>75</weight>
+        <italic>true</italic>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="acceptDrops">
+       <bool>true</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(160, 160, 160, 255), stop:1 rgba(230, 230, 230, 255));
+color: rgba(164, 164, 164, 128);</string>
+      </property>
+      <property name="text">
+       <string>Elara</string>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1701</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="action_New"/>
+    <addaction name="action_Open"/>
+    <addaction name="action_Save"/>
+    <addaction name="separator"/>
+    <addaction name="actionAdd_Ess_File"/>
+    <addaction name="action_SaveImage"/>
+    <addaction name="separator"/>
+    <addaction name="action_Exit"/>
+   </widget>
+   <widget class="QMenu" name="menu_Edit">
+    <property name="title">
+     <string>&amp;Edit</string>
+    </property>
+    <addaction name="action_Copy"/>
+    <addaction name="separator"/>
+    <addaction name="action_Options"/>
+   </widget>
+   <widget class="QMenu" name="menu_Help">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="action_Homepage"/>
+    <addaction name="action_Document"/>
+    <addaction name="action_Contact_Us"/>
+    <addaction name="separator"/>
+    <addaction name="action_About"/>
+   </widget>
+   <widget class="QMenu" name="menuWindows">
+    <property name="title">
+     <string>Windows</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionSimple_Style"/>
+    <addaction name="actionExpert_Style"/>
+   </widget>
+   <addaction name="menu_File"/>
+   <addaction name="menu_Edit"/>
+   <addaction name="menuWindows"/>
+   <addaction name="menu_Help"/>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="action_New"/>
+   <addaction name="action_Open"/>
+   <addaction name="action_Save"/>
+   <addaction name="separator"/>
+   <addaction name="actionAdd_Ess_File"/>
+   <addaction name="action_SaveImage"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QToolBar" name="tbImageOperation">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="action_FitImage"/>
+   <addaction name="action_FitControl"/>
+  </widget>
+  <widget class="QDockWidget" name="dockFileView">
+   <property name="minimumSize">
+    <size>
+     <width>260</width>
+     <height>166</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>File View</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QGridLayout" name="gridLayout_3">
+     <item row="0" column="0">
+      <widget class="QListWidget" name="lstFiles">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="contextMenuPolicy">
+        <enum>Qt::ActionsContextMenu</enum>
+       </property>
+       <property name="horizontalScrollBarPolicy">
+        <enum>Qt::ScrollBarAlwaysOff</enum>
+       </property>
+       <property name="editTriggers">
+        <set>QAbstractItemView::NoEditTriggers</set>
+       </property>
+       <property name="textElideMode">
+        <enum>Qt::ElideMiddle</enum>
+       </property>
+       <property name="movement">
+        <enum>QListView::Static</enum>
+       </property>
+       <property name="resizeMode">
+        <enum>QListView::Adjust</enum>
+       </property>
+       <property name="viewMode">
+        <enum>QListView::IconMode</enum>
+       </property>
+       <property name="uniformItemSizes">
+        <bool>true</bool>
+       </property>
+       <property name="selectionRectVisible">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockPreset">
+   <property name="minimumSize">
+    <size>
+     <width>300</width>
+     <height>208</height>
+    </size>
+   </property>
+   <property name="windowTitle">
+    <string>Preset</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_6">
+    <layout class="QGridLayout" name="gridLayout_4">
+     <item row="0" column="0">
+      <widget class="QComboBox" name="cmbPreset"/>
+     </item>
+     <item row="0" column="1">
+      <widget class="QPushButton" name="btnSavePreset">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Save current override settings as new preset</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="resource.qrc">
+         <normaloff>:/light/save_preset</normaloff>:/light/save_preset</iconset>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0" colspan="2">
+      <widget class="QTreeWidget" name="tvPreset">
+       <property name="horizontalScrollBarPolicy">
+        <enum>Qt::ScrollBarAlwaysOff</enum>
+       </property>
+       <property name="sizeAdjustPolicy">
+        <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
+       </property>
+       <property name="uniformRowHeights">
+        <bool>true</bool>
+       </property>
+       <property name="animated">
+        <bool>true</bool>
+       </property>
+       <property name="columnCount">
+        <number>2</number>
+       </property>
+       <attribute name="headerStretchLastSection">
+        <bool>false</bool>
+       </attribute>
+       <column>
+        <property name="text">
+         <string>Name</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Value</string>
+        </property>
+       </column>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockRenderControl">
+   <property name="minimumSize">
+    <size>
+     <width>900</width>
+     <height>200</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>900</width>
+     <height>524287</height>
+    </size>
+   </property>
+   <property name="windowTitle">
+    <string>Render Control</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_2">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="minimumSize">
+        <size>
+         <width>300</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>0</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="title">
+        <string/>
+       </property>
+       <widget class="QPushButton" name="btnRender">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>30</y>
+          <width>100</width>
+          <height>70</height>
+         </rect>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>70</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>70</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="text">
+         <string>Render</string>
+        </property>
+       </widget>
+       <widget class="QCheckBox" name="chkEnableFilter">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>70</y>
+          <width>151</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Enable Filter</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QCheckBox" name="chkEnableGamma">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>40</y>
+          <width>151</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Enable Gamma</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QCheckBox" name="chkPanorama">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>110</y>
+          <width>151</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Panorama</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="btnShare">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>110</y>
+          <width>100</width>
+          <height>70</height>
+         </rect>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>70</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>70</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="text">
+         <string>Share</string>
+        </property>
+       </widget>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="grpExposureCtrl">
+       <property name="title">
+        <string>Exposure Control</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+       <widget class="QSlider" name="sldHighLight">
+        <property name="geometry">
+         <rect>
+          <x>70</x>
+          <y>40</y>
+          <width>111</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="mouseTracking">
+         <bool>false</bool>
+        </property>
+        <property name="maximum">
+         <number>100</number>
+        </property>
+        <property name="singleStep">
+         <number>1</number>
+        </property>
+        <property name="pageStep">
+         <number>10</number>
+        </property>
+        <property name="value">
+         <number>5</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>40</y>
+          <width>61</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Highlight:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="txtHighLight">
+        <property name="geometry">
+         <rect>
+          <x>190</x>
+          <y>40</y>
+          <width>61</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="inputMask">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_2">
+        <property name="geometry">
+         <rect>
+          <x>260</x>
+          <y>40</y>
+          <width>101</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Exposure Values:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="txtExpValue">
+        <property name="geometry">
+         <rect>
+          <x>490</x>
+          <y>40</y>
+          <width>61</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="inputMask">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QSlider" name="sldExpValue">
+        <property name="geometry">
+         <rect>
+          <x>370</x>
+          <y>40</y>
+          <width>111</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="minimum">
+         <number>-600</number>
+        </property>
+        <property name="maximum">
+         <number>1600</number>
+        </property>
+        <property name="singleStep">
+         <number>10</number>
+        </property>
+        <property name="pageStep">
+         <number>100</number>
+        </property>
+        <property name="value">
+         <number>-100</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_3">
+        <property name="geometry">
+         <rect>
+          <x>260</x>
+          <y>80</y>
+          <width>101</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Color Saturation:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="txtColorSat">
+        <property name="geometry">
+         <rect>
+          <x>490</x>
+          <y>80</y>
+          <width>61</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="inputMask">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QSlider" name="sldColorSat">
+        <property name="geometry">
+         <rect>
+          <x>370</x>
+          <y>80</y>
+          <width>111</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="maximum">
+         <number>500</number>
+        </property>
+        <property name="singleStep">
+         <number>1</number>
+        </property>
+        <property name="pageStep">
+         <number>10</number>
+        </property>
+        <property name="value">
+         <number>130</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_4">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>80</y>
+          <width>61</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Midtones:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="txtMidTones">
+        <property name="geometry">
+         <rect>
+          <x>190</x>
+          <y>80</y>
+          <width>61</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="inputMask">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QSlider" name="sldMidTones">
+        <property name="geometry">
+         <rect>
+          <x>70</x>
+          <y>80</y>
+          <width>111</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>40</number>
+        </property>
+        <property name="singleStep">
+         <number>1</number>
+        </property>
+        <property name="pageStep">
+         <number>4</number>
+        </property>
+        <property name="value">
+         <number>10</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_5">
+        <property name="geometry">
+         <rect>
+          <x>280</x>
+          <y>120</y>
+          <width>81</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>White Point:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="txtWhitePt">
+        <property name="geometry">
+         <rect>
+          <x>490</x>
+          <y>120</y>
+          <width>61</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="inputMask">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QSlider" name="sldWhitePt">
+        <property name="geometry">
+         <rect>
+          <x>370</x>
+          <y>120</y>
+          <width>111</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="minimum">
+         <number>100</number>
+        </property>
+        <property name="maximum">
+         <number>20000</number>
+        </property>
+        <property name="singleStep">
+         <number>100</number>
+        </property>
+        <property name="pageStep">
+         <number>1000</number>
+        </property>
+        <property name="value">
+         <number>6500</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_6">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>120</y>
+          <width>61</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Shadows:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="txtShadows">
+        <property name="geometry">
+         <rect>
+          <x>190</x>
+          <y>120</y>
+          <width>61</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="inputMask">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QSlider" name="sldShadows">
+        <property name="geometry">
+         <rect>
+          <x>70</x>
+          <y>120</y>
+          <width>111</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="maximum">
+         <number>100</number>
+        </property>
+        <property name="pageStep">
+         <number>20</number>
+        </property>
+        <property name="value">
+         <number>10</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockConsole">
+   <property name="windowTitle">
+    <string>Console Output</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_3">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QTextEdit" name="txtConsole">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>Consolas</family>
+         <pointsize>9</pointsize>
+         <kerning>false</kerning>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(230, 230, 230, 255), stop:1 rgba(160, 160, 160, 255));</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockSimple">
+   <property name="minimumSize">
+    <size>
+     <width>421</width>
+     <height>50</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>524287</width>
+     <height>50</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetVerticalTitleBar</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::BottomDockWidgetArea|Qt::TopDockWidgetArea</set>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>4</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_4">
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <property name="topMargin">
+      <number>2</number>
+     </property>
+     <property name="bottomMargin">
+      <number>2</number>
+     </property>
+     <item>
+      <widget class="QPushButton" name="smpRender">
+       <property name="text">
+        <string>Render</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="smpPreset"/>
+     </item>
+     <item>
+      <widget class="QComboBox" name="smpResolution">
+       <item>
+        <property name="text">
+         <string>1280 x 720</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>1600 x 900</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>1920 x 1080</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Panorama : 1024</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Panorama : 2048</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="smpProgressive">
+       <property name="text">
+        <string>Progressive</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="smpExposure">
+       <property name="text">
+        <string>Exposure</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="smpExpSlider">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimum">
+        <number>-600</number>
+       </property>
+       <property name="maximum">
+        <number>1600</number>
+       </property>
+       <property name="singleStep">
+        <number>10</number>
+       </property>
+       <property name="pageStep">
+        <number>100</number>
+       </property>
+       <property name="value">
+        <number>-100</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="smpTxtExposure">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <action name="action_File">
+   <property name="text">
+    <string>&amp;File</string>
+   </property>
+  </action>
+  <action name="action_New">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="light" resource="resource.qrc">
+     <normaloff>:/light/new</normaloff>:/light/new</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;New Project</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="action_Open">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/light/open</normaloff>:/light/open</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Open Project</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="action_Save">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/light/save</normaloff>:/light/save</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save Project</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="action_FitImage">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/light/fit_to_image</normaloff>:/light/fit_to_image</iconset>
+   </property>
+   <property name="text">
+    <string>FitImage</string>
+   </property>
+   <property name="toolTip">
+    <string>Fit to image size</string>
+   </property>
+  </action>
+  <action name="action_About">
+   <property name="text">
+    <string>&amp;About Elara Render GUI...</string>
+   </property>
+  </action>
+  <action name="action_Copy">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/light/copy</normaloff>:/light/copy</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Copy Image</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="action_Exit">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/light/exit</normaloff>:/light/exit</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Exit</string>
+   </property>
+  </action>
+  <action name="action_FitControl">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/light/fit_to_control</normaloff>:/light/fit_to_control</iconset>
+   </property>
+   <property name="text">
+    <string>FitControl</string>
+   </property>
+   <property name="toolTip">
+    <string>Fit to viewer size</string>
+   </property>
+  </action>
+  <action name="action_Options">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/light/option</normaloff>:/light/option</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Options...</string>
+   </property>
+  </action>
+  <action name="action_Document">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/light/help</normaloff>:/light/help</iconset>
+   </property>
+   <property name="text">
+    <string>Document...</string>
+   </property>
+  </action>
+  <action name="action_Contact_Us">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/light/email</normaloff>:/light/email</iconset>
+   </property>
+   <property name="text">
+    <string>Contact Us...</string>
+   </property>
+  </action>
+  <action name="action_Homepage">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/light/home_page</normaloff>:/light/home_page</iconset>
+   </property>
+   <property name="text">
+    <string>Homepage...</string>
+   </property>
+   <property name="shortcut">
+    <string/>
+   </property>
+  </action>
+  <action name="action_SaveImage">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/light/save_image</normaloff>:/light/save_image</iconset>
+   </property>
+   <property name="text">
+    <string>Save Image As...</string>
+   </property>
+  </action>
+  <action name="actionAdd_Ess_File">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/light/open</normaloff>:/light/open</iconset>
+   </property>
+   <property name="text">
+    <string>Add ESS Files...</string>
+   </property>
+  </action>
+  <action name="actionSimple_Style">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Simple Style</string>
+   </property>
+  </action>
+  <action name="actionExpert_Style">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Expert Style</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>QCustomLabel</class>
+   <extends>QLabel</extends>
+   <header location="global">qcustomlabel.h</header>
+   <slots>
+    <signal>ScaleChanged(float)</signal>
+    <slot>FitImage()</slot>
+    <slot>FitControl()</slot>
+   </slots>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>action_Exit</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>SafeClose()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>371</x>
+     <y>248</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lstFiles</sender>
+   <signal>itemClicked(QListWidgetItem*)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>FileItemChanged(QListWidgetItem*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>110</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>371</x>
+     <y>248</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_FitImage</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>FitImage()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>371</x>
+     <y>248</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_Options</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>ShowOption()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>371</x>
+     <y>248</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_FitControl</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>FitControl()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>799</x>
+     <y>449</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>imageViewer</sender>
+   <signal>ScaleChanged(float)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onImageScaleChanged(float)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>987</x>
+     <y>401</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>850</x>
+     <y>480</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>FileItemChanged(QListWidgetItem*)</slot>
+  <slot>FitImage()</slot>
+  <slot>FitControl()</slot>
+  <slot>ShowOption()</slot>
+  <slot>SafeClose()</slot>
+  <slot>onImageScaleChanged(float)</slot>
+ </slots>
+</ui>

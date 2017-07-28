@@ -1,0 +1,43 @@
+<RCC>
+    <qresource prefix="/images">
+        <file alias="default_logo">default_logo.png</file>
+        <file alias="app_logo">logo.png</file>
+    </qresource>
+    <qresource prefix="/translate">
+        <file alias="ch_cn">cn.qm</file>
+    </qresource>
+    <qresource prefix="/light">
+        <file alias="exit">light/application-exit.png</file>
+        <file alias="add_ess">light/batchadd.png</file>
+        <file alias="blog">light/blog.png</file>
+        <file alias="copy">light/editcopy.png</file>
+        <file alias="new">light/filenew.png</file>
+        <file alias="fit_to_control">light/fit2ctl.png</file>
+        <file alias="fit_to_image">light/fit2img.png</file>
+        <file alias="help">light/help-browser.png</file>
+        <file alias="home_page">light/home-page.png</file>
+        <file alias="email">light/kontact_mail.png</file>
+        <file alias="open">light/open.png</file>
+        <file alias="option">light/option.png</file>
+        <file alias="save_preset">light/presetsave.png</file>
+        <file alias="save">light/save.png</file>
+        <file alias="save_image">light/saveimage.png</file>
+    </qresource>
+    <qresource prefix="/dark">
+        <file>dark/application-exit.png</file>
+        <file>dark/batchadd.png</file>
+        <file>dark/blog.png</file>
+        <file>dark/editcopy.png</file>
+        <file>dark/filenew.png</file>
+        <file>dark/fit2ctl.png</file>
+        <file>dark/fit2img.png</file>
+        <file>dark/help-browser.png</file>
+        <file>dark/home-page.png</file>
+        <file>dark/kontact_mail.png</file>
+        <file>dark/open.png</file>
+        <file>dark/option.png</file>
+        <file>dark/presetsave.png</file>
+        <file>dark/save.png</file>
+        <file>dark/saveimage.png</file>
+    </qresource>
+</RCC>
