@@ -512,6 +512,17 @@ struct EH_Sky
 	float intensity;
 	const char *hdri_name;
 	float hdri_rotation;
+	bool enable_emit_GI;
+
+	EH_Sky() :
+		enabled(true),
+		intensity(1.0f),
+		hdri_name(NULL),
+		hdri_rotation(0.0f),
+		enable_emit_GI(false)
+	{
+
+	}
 };
 
 /** Set the current sky environment.

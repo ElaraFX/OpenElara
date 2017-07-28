@@ -433,7 +433,7 @@ void EH_add_light(EH_Context *ctx, const char *name, const EH_Light *lgt)
 
 void EH_set_sky(EH_Context *ctx, const EH_Sky *sky)
 {
-	reinterpret_cast<EssExporter*>(ctx)->AddBackground(std::string(sky->hdri_name), sky->hdri_rotation, sky->intensity);
+	reinterpret_cast<EssExporter*>(ctx)->AddBackground(std::string(sky->hdri_name), sky->hdri_rotation, sky->intensity, sky->enable_emit_GI);
 }
 
 void EH_set_sun(EH_Context *ctx, const EH_Sun *sun)
