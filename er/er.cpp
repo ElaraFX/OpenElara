@@ -43,6 +43,7 @@ struct RenderProcess
 	eiBool						interactive;
 	eiBool						progressive;
 	eiBool						target_set;
+	eiBool						debug_adaptive;
 	eiVector					obj_center;
 	eiVector					up_vector;
 	eiVector					camera_target;
@@ -51,6 +52,19 @@ struct RenderProcess
 	eiTimer						first_pixel_timer;
 	eiBool						is_first_pass;
 	std::string					aov_name;
+	eiBool						need_GI_timer;
+	eiBool						is_idle;
+	eiInt						start_idle_time;
+	eiInt						idle_threshold;
+	eiBool						last_render_is_interactive;
+	eiInt						org_max_samples;
+	eiInt						org_diffuse_samples;
+	eiInt						org_sss_samples;
+	eiInt						org_volume_indirect_samples;
+	eiInt						org_random_lights;
+	eiInt						org_progressive;
+	eiInt						new_max_samples;
+	eiInt						new_random_lights;
 
 	RenderProcess(
 		eiInt res_x, 
@@ -58,6 +72,7 @@ struct RenderProcess
 		eiRenderParameters *_render_params, 
 		eiBool _interactive, 
 		eiBool _progressive, 
+		eiBool _debug_adaptive,
 		const std::string & _aov_name)
 	{
 		init_callbacks();
@@ -68,6 +83,7 @@ struct RenderProcess
 		render_params = _render_params;
 		interactive = _interactive;
 		progressive = _progressive;
+		debug_adaptive = _debug_adaptive;
 		target_set = EI_FALSE;
 		obj_center = 0.0f;
 		up_vector = ei_vector(0.0f, 0.0f, 1.0f);
@@ -77,6 +93,19 @@ struct RenderProcess
 		const eiColor blackColor = ei_color(0.0f);
 		originalBuffer.resize(imageWidth * imageHeight, blackColor);
 		aov_name = _aov_name;
+		need_GI_timer = EI_FALSE;
+		is_idle = EI_TRUE;
+		start_idle_time = ei_get_time();
+		idle_threshold = 20;
+		last_render_is_interactive = FALSE;
+		org_max_samples = 1;
+		org_diffuse_samples = 1;
+		org_sss_samples = 1;
+		org_volume_indirect_samples = 1;
+		org_random_lights = 16;
+		org_progressive = EI_FALSE;
+		new_max_samples = 1;
+		new_random_lights = 16;
 	}
 
 	~RenderProcess()
@@ -220,6 +249,29 @@ static void rprocess_job_started(
 	ei_read_unlock(rp->bufferLock);
 }
 
+eiColor hsv_to_rgb (eiScalar h, eiScalar s, eiScalar v)
+{
+    // Reference for this technique: Foley & van Dam
+    if (s < 0.0001f) {
+      return ei_color (v, v, v);
+    } else {
+        h = 6.0f * (h - floorf(h));  // expand to [0..6)
+        int hi = (int) h;
+        float f = h - hi;
+        float p = v * (1.0f-s);
+        float q = v * (1.0f-s*f);
+        float t = v * (1.0f-s*(1.0f-f));
+        switch (hi) {
+        case 0 : return ei_color (v, t, p);
+        case 1 : return ei_color (q, v, p);
+        case 2 : return ei_color (p, v, t);
+        case 3 : return ei_color (p, q, v);
+        case 4 : return ei_color (t, p, v);
+        default: return ei_color (v, p, q);
+	}
+    }
+}
+
 static void rprocess_job_finished(
 	eiProcess *process, 
 	const eiTag job, 
@@ -237,15 +289,6 @@ static void rprocess_job_finished(
 	if (job_state == EI_JOB_CANCELLED)
 	{
 		return;
-	}
-
-	if (pJob->pass_id <= EI_PASS_GI_CACHE_PROGRESSIVE)
-	{
-		eiInt GI_cache_samples = (EI_PASS_GI_CACHE_PROGRESSIVE + 1) - pJob->pass_id;
-		if ((GI_cache_samples % 4) != 0)
-		{
-			return;
-		}
 	}
 
 	eiFrameBufferCache	infoBuffer;
@@ -328,11 +371,27 @@ static void rprocess_job_finished(
 		{
 			for (eiInt i = fb_rect.left; i < fb_rect.right; ++i)
 			{
-				ei_framebuffer_cache_get_final(
-					&sourceBuffer, 
-					i, 
-					j, 
-					&(originalBuffer[i - fb_rect.left]));
+				if (rp->debug_adaptive)
+				{
+					const eiInt cur_samples_num = pJob->pass_id + 2;
+					eiScalar h = 0;
+					if (cur_samples_num > 1)
+					{
+						eiPixelInfo info_dest;
+						ei_framebuffer_cache_get(&infoBuffer, i, j, &info_dest);
+						h = 2.0f * (1.0f - eiScalar(info_dest.num_samples) / eiScalar(cur_samples_num)) / 3.0f;
+						if (h > 1) h -= 1;
+					}
+					originalBuffer[i - fb_rect.left] = hsv_to_rgb(h, 1, 1);
+				}
+				else
+				{
+					ei_framebuffer_cache_get_final(
+						&sourceBuffer, 
+						i, 
+						j, 
+						&(originalBuffer[i - fb_rect.left]));
+				}
 			}
 			originalBuffer -= imageWidth;
 		}
@@ -392,9 +451,41 @@ static void display_callback(eiInt frameWidth, eiInt frameHeight, void *param)
 			drag_button = EI_DRAG_BUTTON_LEFT;
 		}
 
-		if (drag_mode != EI_DRAG_MODE_NONE && 
+		eiBool has_user_action = (
+			drag_mode != EI_DRAG_MODE_NONE && 
 			drag_button != EI_DRAG_BUTTON_RIGHT && 
-			(offset[0] != 0.0f || offset[1] != 0.0f))
+			(offset[0] != 0.0f || offset[1] != 0.0f));
+
+		eiBool idle_timeout = EI_FALSE;
+		if (has_user_action)
+		{
+			/* clear idle state if user has actions */
+			rp->is_idle = EI_FALSE;
+		}
+		else
+		{
+			/* enter idle time if we don't have user actions */
+			eiInt current_time = ei_get_time();
+			if (!rp->is_idle)
+			{
+				rp->start_idle_time = current_time;
+				rp->is_idle = EI_TRUE;
+			}
+			else if ((current_time - rp->start_idle_time) > rp->idle_threshold * 1000)
+			{
+				rp->start_idle_time = current_time;
+				idle_timeout = EI_TRUE;
+				printf("******** IDLE %d ********\n", current_time);
+				rp->idle_threshold = 5;
+			}
+		}
+
+		eiBool switch_to_GI_cache = (
+			rp->need_GI_timer && 
+			rp->last_render_is_interactive && 
+			idle_timeout);
+
+		if (has_user_action || switch_to_GI_cache)
 		{
 			if (rp->renderThread != NULL) /* is rendering */
 			{
@@ -405,6 +496,42 @@ static void display_callback(eiInt frameWidth, eiInt frameHeight, void *param)
 				rp->renderThread = NULL;
 
 				ei_render_cleanup();
+			}
+
+			/* modify options parameters */
+			const char *opt_name = rp->render_params->options;
+			if (opt_name != NULL)
+			{
+				if (rp->need_GI_timer)
+				{
+					eiBool need_init;
+					eiNode *opt_node = ei_edit_node(opt_name, &need_init);
+
+					if (switch_to_GI_cache)
+					{
+						ei_node_enum(opt_node, "engine", "GI cache");
+						ei_node_int(opt_node, "max_samples", rp->org_max_samples);
+						ei_node_int(opt_node, "diffuse_samples", rp->org_diffuse_samples);
+						ei_node_int(opt_node, "sss_samples", rp->org_sss_samples);
+						ei_node_int(opt_node, "volume_indirect_samples", rp->org_volume_indirect_samples);
+						ei_node_int(opt_node, "random_lights", rp->org_random_lights);
+						ei_node_bool(opt_node, "progressive", rp->org_progressive);
+						rp->last_render_is_interactive = EI_FALSE;
+					}
+					else
+					{
+						ei_node_enum(opt_node, "engine", "hybrid path tracer");
+						ei_node_int(opt_node, "max_samples", rp->new_max_samples);
+						ei_node_int(opt_node, "diffuse_samples", 1);
+						ei_node_int(opt_node, "sss_samples", 1);
+						ei_node_int(opt_node, "volume_indirect_samples", 1);
+						ei_node_int(opt_node, "random_lights", rp->new_random_lights);
+						ei_node_bool(opt_node, "progressive", EI_TRUE);
+						rp->last_render_is_interactive = EI_TRUE;
+					}
+
+					ei_end_edit_node(opt_node);
+				}
 			}
 
 			/* modify viewport parameters */
@@ -591,6 +718,10 @@ int main_body(int argc, char *argv[])
 	{
 		ei_print_dongle_id();
 	}
+	else if (argc == 1 && strcmp(argv[0], "-identify") == 0)
+	{
+		ei_local_license_print_id();
+	}
 	else if (argc == 1 && strcmp(argv[0], "-nodes") == 0)
 	{
 		ei_context();
@@ -612,6 +743,7 @@ int main_body(int argc, char *argv[])
 		eiBool ignore_render = EI_FALSE;
 		eiBool display = EI_FALSE;
 		eiBool interactive = EI_FALSE;
+		eiBool debug_adaptive = EI_FALSE;
 		eiBool resolution_overridden = EI_FALSE;
 		eiBool force_progressive = EI_FALSE;
 		eiInt res_x;
@@ -747,6 +879,21 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -output\n");
 					}
 				}
+				else if (strcmp(argv[i], "-adaptive") == 0)
+				{
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_scalar("options", "adaptive_sampling_rate", (eiScalar)atof(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -adaptive\n");
+					}
+				}
 				else if (strcmp(argv[i], "-samples") == 0)
 				{
 					// -samples min_samples max_samples
@@ -815,6 +962,23 @@ int main_body(int argc, char *argv[])
 					else
 					{
 						ei_error("No enough arguments specified for command: -volume_indirect_samples\n");
+					}
+				}
+				else if (strcmp(argv[i], "-random_lights") == 0)
+				{
+					// -random_lights value
+					//
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_int("options", "random_lights", atoi(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -random_lights\n");
 					}
 				}
 				else if (strcmp(argv[i], "-diffuse_depth") == 0)
@@ -1073,6 +1237,22 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -GI_cache_density\n");
 					}
 				}
+				else if (strcmp(argv[i], "-GI_cache_normal_density") == 0)
+				{
+					// -GI_cache_normal_density value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_scalar("options", "GI_cache_normal_density", (eiScalar)atof(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -GI_cache_normal_density\n");
+					}
+				}
 				else if (strcmp(argv[i], "-GI_cache_passes") == 0)
 				{
 					// -GI_cache_passes value
@@ -1167,6 +1347,153 @@ int main_body(int argc, char *argv[])
 					else
 					{
 						ei_error("No enough arguments specified for command: -GI_cache_no_leak\n");
+					}
+				}
+				else if (strcmp(argv[i], "-GI_cache_indirect_glossy") == 0)
+				{
+					// -GI_cache_indirect_glossy value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_bool("options", "GI_cache_indirect_glossy", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -GI_cache_indirect_glossy\n");
+					}
+				}
+				else if (strcmp(argv[i], "-GI_cache_adaptive") == 0)
+				{
+					// -GI_cache_adaptive value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_scalar("options", "GI_cache_adaptive", (eiScalar)atof(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -GI_cache_adaptive\n");
+					}
+				}
+				else if (strcmp(argv[i], "-GI_cache_samples") == 0)
+				{
+					// -GI_cache_samples min_samples max_samples
+					//
+					if ((i + 2) < argc)
+					{
+						const char *min_samples = argv[i + 1];
+						const char *max_samples = argv[i + 2];
+
+						ei_override_int("options", "GI_cache_min_samples", atoi(min_samples));
+						ei_override_int("options", "GI_cache_max_samples", atoi(max_samples));
+
+						i += 2;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -GI_cache_samples\n");
+					}
+				}
+				else if (strcmp(argv[i], "-GI_cache_gradient") == 0)
+				{
+					// -GI_cache_gradient value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_enum("options", "GI_cache_gradient", value);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -GI_cache_gradient\n");
+					}
+				}
+				else if (strcmp(argv[i], "-GI_cache_show_samples") == 0)
+				{
+					// -GI_cache_show_samples value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_bool("options", "GI_cache_show_samples", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -GI_cache_show_samples\n");
+					}
+				}
+				else if (strcmp(argv[i], "-GI_cache_sample_scale") == 0)
+				{
+					// -GI_cache_sample_scale value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_int("options", "GI_cache_sample_scale", atoi(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -GI_cache_sample_scale\n");
+					}
+				}
+				else if (strcmp(argv[i], "-GI_cache_normal_quality") == 0)
+				{
+					// -GI_cache_normal_quality value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_scalar("options", "GI_cache_normal_quality", (eiScalar)atof(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -GI_cache_normal_quality\n");
+					}
+				}
+				else if (strcmp(argv[i], "-GI_cache_front_test") == 0)
+				{
+					// -GI_cache_front_test value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_scalar("options", "GI_cache_front_test", (eiScalar)atof(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -GI_cache_front_test\n");
+					}
+				}
+				else if (strcmp(argv[i], "-GI_cache_behind_test") == 0)
+				{
+					// -GI_cache_behind_test value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_scalar("options", "GI_cache_behind_test", (eiScalar)atof(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -GI_cache_behind_test\n");
 					}
 				}
 				else if (strcmp(argv[i], "-progressive") == 0)
@@ -1283,6 +1610,12 @@ int main_body(int argc, char *argv[])
 				{
 					// -interactive
 					interactive = EI_TRUE;
+				}
+				else if (strcmp(argv[i], "-debug_adaptive") == 0)
+				{
+					// -debug_adaptive
+					display = EI_TRUE;
+					debug_adaptive = EI_TRUE;
 				}
 				else if (strcmp(argv[i], "-parse1") == 0)
 				{
@@ -1461,6 +1794,21 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -login\n");
 					}
 				}
+				else if (strcmp(argv[i], "-activate") == 0)
+				{
+					if ((i + 1) < argc)
+					{
+						const char *code = argv[i + 1];
+
+						ei_local_license_set(code);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -activate\n");
+					}
+				}
 				else if (strcmp(argv[i], "-render") == 0)
 				{
 					if ((i + 3) < argc)
@@ -1489,6 +1837,21 @@ int main_body(int argc, char *argv[])
 					else
 					{
 						ei_error("No enough arguments specified for command: -aov\n");
+					}
+				}
+				else if (strcmp(argv[i], "-accel_mode") == 0)
+				{
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_enum("options", "accel_mode", value);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -accel_mode\n");
 					}
 				}
 				else
@@ -1587,11 +1950,12 @@ int main_body(int argc, char *argv[])
 								eiDataAccessor<eiNode> opt_item(opt_item_tag);
 								progressive = ei_node_get_bool(opt_item.get(), ei_node_find_param(opt_item.get(), "progressive"));
 							}
+							eiBool new_progressive = progressive;
 							if (force_progressive || interactive)
 							{
-								progressive = EI_TRUE;
+								new_progressive = EI_TRUE;
 							}
-							RenderProcess rp(res_x, res_y, &render_params, interactive, progressive, aov_name);
+							RenderProcess rp(res_x, res_y, &render_params, interactive, new_progressive, debug_adaptive, aov_name);
 
 							if (interactive)
 							{
@@ -1606,7 +1970,7 @@ int main_body(int argc, char *argv[])
 
 									eiInt max_samples = 1;
 									eiIndex max_samples_pid = ei_node_find_param(opt_node, "max_samples");
-									if (max_samples_pid != EI_NULL_TAG)
+									if (max_samples_pid != EI_NULL_INDEX)
 									{
 										max_samples = ei_node_get_int(opt_node, max_samples_pid);
 									}
@@ -1614,7 +1978,7 @@ int main_body(int argc, char *argv[])
 
 									eiInt diffuse_samples = 1;
 									eiIndex diffuse_samples_pid = ei_node_find_param(opt_node, "diffuse_samples");
-									if (diffuse_samples_pid != EI_NULL_TAG)
+									if (diffuse_samples_pid != EI_NULL_INDEX)
 									{
 										diffuse_samples = ei_node_get_int(opt_node, diffuse_samples_pid);
 									}
@@ -1622,7 +1986,7 @@ int main_body(int argc, char *argv[])
 
 									eiInt sss_samples = 1;
 									eiIndex sss_samples_pid = ei_node_find_param(opt_node, "sss_samples");
-									if (sss_samples_pid != EI_NULL_TAG)
+									if (sss_samples_pid != EI_NULL_INDEX)
 									{
 										sss_samples = ei_node_get_int(opt_node, sss_samples_pid);
 									}
@@ -1630,7 +1994,7 @@ int main_body(int argc, char *argv[])
 
 									eiInt volume_indirect_samples = 1;
 									eiIndex volume_indirect_samples_pid = ei_node_find_param(opt_node, "volume_indirect_samples");
-									if (volume_indirect_samples_pid != EI_NULL_TAG)
+									if (volume_indirect_samples_pid != EI_NULL_INDEX)
 									{
 										volume_indirect_samples = ei_node_get_int(opt_node, volume_indirect_samples_pid);
 									}
@@ -1638,33 +2002,58 @@ int main_body(int argc, char *argv[])
 
 									eiInt random_lights = 1;
 									eiIndex random_lights_pid = ei_node_find_param(opt_node, "random_lights");
-									if (random_lights_pid != EI_NULL_TAG)
+									if (random_lights_pid != EI_NULL_INDEX)
 									{
 										random_lights = ei_node_get_int(opt_node, random_lights_pid);
 									}
 									printf("Random lights: %d\n", random_lights);
 
 									eiInt max_dist_samples = max(diffuse_samples, max(sss_samples, volume_indirect_samples));
-									if (max_samples > 16)
+									eiInt new_max_samples = max_samples;
+									if (new_max_samples > 16)
 									{
-										max_samples *= max(1, max_dist_samples / (max_samples / 16));
+										new_max_samples *= max(1, max_dist_samples / (new_max_samples / 16));
 									}
 									else
 									{
-										max_samples *= max_dist_samples;
+										new_max_samples *= max_dist_samples;
 									}
 
-									printf("Interactive samples: %d\n", max_samples);
-									ei_node_set_int(opt_node, max_samples_pid, max_samples);
+									printf("Interactive samples: %d\n", new_max_samples);
+									ei_node_set_int(opt_node, max_samples_pid, new_max_samples);
 
 									ei_node_int(opt_node, "diffuse_samples", 1);
 									ei_node_int(opt_node, "sss_samples", 1);
 									ei_node_int(opt_node, "volume_indirect_samples", 1);
-									if (random_lights <= 0 || random_lights > 16)
+
+									eiInt new_random_lights = random_lights;
+									if (new_random_lights <= 0 || new_random_lights > 16)
 									{
-										ei_node_int(opt_node, "random_lights", 16);
+										new_random_lights = 16;
 									}
+									ei_node_int(opt_node, "random_lights", new_random_lights);
 									ei_node_bool(opt_node, "progressive", EI_TRUE);
+
+									eiInt engine = EI_ENGINE_HYBRID_PATH_TRACER;
+									eiIndex engine_pid = ei_node_find_param(opt_node, "engine");
+									if (engine_pid != EI_NULL_INDEX)
+									{
+										engine = ei_node_get_int(opt_node, engine_pid);
+									}
+									if (engine == EI_ENGINE_GI_CACHE)
+									{
+										ei_node_enum(opt_node, "engine", "hybrid path tracer");
+										rp.need_GI_timer = EI_TRUE;
+										rp.last_render_is_interactive = EI_TRUE;
+										rp.org_max_samples = max_samples;
+										rp.org_diffuse_samples = diffuse_samples;
+										rp.org_sss_samples = sss_samples;
+										rp.org_volume_indirect_samples = volume_indirect_samples;
+										rp.org_random_lights = random_lights;
+										rp.org_progressive = progressive;
+										rp.new_max_samples = new_max_samples;
+										rp.new_random_lights = new_random_lights;
+									}
 
 									ei_end_edit_node(opt_node);
 								}
@@ -1680,7 +2069,7 @@ int main_body(int argc, char *argv[])
 								rp.renderThread = ei_create_thread(render_callback, &render_params, NULL);
 								ei_set_low_thread_priority(rp.renderThread);
 
-								if (display)
+								if (display || interactive)
 								{
 									ei_display(display_callback, &rp, res_x, res_y);
 								}
