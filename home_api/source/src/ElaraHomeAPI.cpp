@@ -32,7 +32,7 @@
 
 const int GET_RENDER_DATA_PERIOD = 100;
 
-eiBool g_abort_render = EI_FALSE;
+eiAtomic g_abort_render;
 eiBool g_is_render_finished = EI_TRUE;
 
 /* 是否显示面光源，调试用 */
@@ -456,11 +456,13 @@ EI_THREAD_FUNC render_callback(void *param)
 	return (EI_THREAD_FUNC_RESULT)EI_TRUE;
 }
 
-bool WindowProcOnRendering(void *param, bool is_abort_render, EH_display_callback display_cb, EH_ProgressCallback progress_cb)
+bool WindowProcOnRendering(void *param, EH_display_callback display_cb, EH_ProgressCallback progress_cb)
 {
 	ei_sleep(GET_RENDER_DATA_PERIOD);
 
 	EHRenderProcess *rp = (EHRenderProcess *)param;
+
+	bool is_abort_render = ei_atomic_read(&g_abort_render);
 
 	if (is_abort_render)
 	{
@@ -522,7 +524,7 @@ void EH_set_display_callback(EH_Context *ctx, EH_display_callback cb)
 
 bool EH_start_render(EH_Context *ctx, const char *ess_name, bool is_interactive)
 {
-	g_abort_render = EI_FALSE;
+	ei_atomic_swap(&g_abort_render, EI_FALSE);
 
 	bool ret = true;
 	ei_context();
@@ -663,7 +665,7 @@ bool EH_start_render(EH_Context *ctx, const char *ess_name, bool is_interactive)
 						EH_display_callback display_cb = reinterpret_cast<EssExporter*>(ctx)->display_callback;
 						EH_ProgressCallback progress_cb = reinterpret_cast<EssExporter*>(ctx)->progress_callback;
 
-						while(WindowProcOnRendering(&rp, g_abort_render, 
+						while(WindowProcOnRendering(&rp, 
 							display_cb, 
 							progress_cb))
 						{
@@ -696,6 +698,6 @@ bool EH_start_render(EH_Context *ctx, const char *ess_name, bool is_interactive)
 
 void EH_stop_render(EH_Context *ctx)
 {
-	g_abort_render = EI_TRUE;
+	ei_atomic_swap(&g_abort_render, EI_TRUE);
 	ei_job_abort(EI_TRUE);
 }
