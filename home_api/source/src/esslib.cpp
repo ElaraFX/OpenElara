@@ -1171,8 +1171,11 @@ void EssExporter::AddMesh(const EH_Mesh& model, const std::string &modelName)
 		mWriter.AddPointArray("N", (eiVector*)model.normals, model.num_verts);
 	}
 
-	mWriter.AddDeclare("vector2[]", "uv0", "varying");
-	mWriter.AddVector2Array("uv0", (eiVector2*)model.uvs, model.num_verts);
+	if(model.uvs)
+	{
+		mWriter.AddDeclare("vector2[]", "uv0", "varying");
+		mWriter.AddVector2Array("uv0", (eiVector2*)model.uvs, model.num_verts);
+	}	
 
 	if (model.mtl_indices)
 	{
