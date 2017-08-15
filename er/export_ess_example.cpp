@@ -55,7 +55,7 @@ int main()
 	EH_Sky sky;
 	sky.enabled = true;
 	sky.hdri_name = "test.hdr";
-	sky.hdri_rotation = false;
+	sky.hdri_rotation = 0.0f;
 	sky.intensity = 2.0f;
 	EH_set_sky(pContext, &sky);
 
