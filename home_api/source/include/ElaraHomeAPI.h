@@ -511,7 +511,7 @@ struct EH_Sky
 	bool enabled;
 	float intensity;
 	const char *hdri_name;
-	float hdri_rotation;
+	float hdri_rotation; /* in degrees */
 	bool enable_emit_GI;
 
 	EH_Sky() :

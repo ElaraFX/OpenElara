@@ -395,7 +395,7 @@ std::string AddHDRI(EssWriter& writer, const std::string hdri_name, float rotati
 	std::string uvgenName = texName + "_uvgen";
 	writer.BeginNode("max_stduv", uvgenName);
 	writer.AddToken("mapChannel", "uv0");
-	writer.AddScaler("uOffset", radians(rotation));
+	writer.AddScaler("uOffset", rotation/360.0f);
 	writer.AddScaler("uScale", 1.0f);
 	writer.AddBool("uWrap", true);
 	writer.AddScaler("vScale", 1.0f);
