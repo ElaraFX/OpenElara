@@ -300,9 +300,9 @@ const char* AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &op
 	writer.AddInt("volume_indirect_samples", 8);
 	writer.AddScaler("light_cutoff", 0.01);
 	writer.AddScaler("GI_cache_density", 1.0);
-	writer.AddInt("GI_cache_passes", 100);
+	writer.AddInt("GI_cache_passes", 150);	
 	writer.AddInt("GI_cache_points", 5);
-	writer.AddEnum("GI_cache_preview", "off");
+	writer.AddEnum("GI_cache_preview", "accurate");
 	writer.AddInt("diffuse_depth", option.trace_diffuse_depth);
 	writer.AddInt("sum_depth", option.trace_total_depth);
 	writer.AddBool("caustic", false);
@@ -316,6 +316,7 @@ const char* AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &op
 	writer.AddScaler("texture_gamma", 2.2f);
 	writer.AddScaler("shader_gamma", 2.2f);
 	writer.AddScaler("light_gamma", 2.2f);
+	writer.AddBool("exposure", false);
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
 	writer.EndNode();
