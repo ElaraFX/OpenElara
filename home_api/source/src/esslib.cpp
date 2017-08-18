@@ -28,6 +28,7 @@ const char* g_inst_group_name = "mtoer_instgroup_00";
 const eiMatrix l2r = ei_matrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1);
 
 bool g_check_normal = false;
+bool g_gi_cache_show_samples = false;
 
 std::string AddTexture(EssWriter& writer, const std::string texPath, const float repeat_u, float repeat_v, const std::string texName, const std::string rootPath);
 std::string AddNormalBump(EssWriter& writer, const std::string &normalMap);
@@ -183,6 +184,7 @@ const char* AddDefaultOptions(EssWriter& writer)
 	writer.AddBool("exposure", false);
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
 	return optName;
 }
@@ -217,6 +219,7 @@ const char* AddMediumOptions(EssWriter &writer)
 	writer.AddBool("exposure", false);
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
 	return optName;
 }
@@ -251,6 +254,7 @@ const char* AddLowOptions(EssWriter &writer)
 	writer.AddBool("exposure", false);
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
 	return optName;
 }
@@ -285,6 +289,7 @@ const char* AddHighOptions(EssWriter &writer)
 	writer.AddBool("exposure", false);
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
 	return optName;
 }
@@ -319,6 +324,7 @@ const char* AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &op
 	writer.AddBool("exposure", false);
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
 	return optName;
 }
