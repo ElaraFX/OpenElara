@@ -35,6 +35,10 @@ const int GET_RENDER_DATA_PERIOD = 100;
 eiAtomic g_abort_render;
 eiBool g_is_render_finished = EI_TRUE;
 
+/* 去水印授权码 */
+EH_LicenseData g_license_data;
+EI_API void ei_dongle_license_set(eiUint code1, eiUint code2, const char *license_code);
+
 /* 是否显示面光源，调试用 */
 eiBool g_show_portal_light_area = EI_FALSE;
 
@@ -337,6 +341,11 @@ void EH_convert_native_arguments(int argc, const char *argv[])
 #endif
 }
 
+void EH_set_license_data(EH_LicenseData lic_data)
+{
+	g_license_data = lic_data;
+}
+
 EH_Context * EH_create()
 {
 	return (EH_Context*)new EssExporter();
@@ -528,6 +537,14 @@ bool EH_start_render(EH_Context *ctx, const char *ess_name, bool is_interactive)
 
 	bool ret = true;
 	ei_context();
+
+	if(g_license_data.lic_type == EH_DONGLE_LOCK)
+	{
+		ei_dongle_license_set(
+			strtoul(g_license_data.code1, NULL, 0),
+			strtoul(g_license_data.code2, NULL, 0),
+			g_license_data.activate_code);
+	}
 
 	if (ess_name != NULL)
 	{		

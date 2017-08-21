@@ -106,6 +106,37 @@ EH_API char *EH_utf16_to_utf8(const wchar_t *str);
 EH_API void EH_convert_native_arguments(int argc, const char *argv[]);
 
 
+/** Elara license type
+*/
+enum EH_LicenseKeyType
+{
+	EH_NONE_LICENSE,        /**< None license */
+	EH_DONGLE_LOCK			/**< Using Dongle id for verifying */
+};
+
+/** Elara license data
+*/
+struct EH_LicenseData
+{
+	char *code1;			/**< Vendor id */
+	char *code2;			/**< Vendor id */
+	char *activate_code;	/**< License key of applying */
+
+	EH_LicenseKeyType lic_type;
+
+	EH_LicenseData() :
+		code1(NULL),
+		code2(NULL),
+		activate_code(NULL),
+		lic_type(EH_NONE_LICENSE)
+	{
+	}
+};
+
+/** Set Elara license to remove watermark
+*/
+EH_API void EH_set_license_data(EH_LicenseData lic_data);
+
 
 /** The exporting context.
  */
