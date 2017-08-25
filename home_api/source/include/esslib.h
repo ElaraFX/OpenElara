@@ -52,6 +52,7 @@ private:
 	bool mCheckNormal;
 	bool mIsLeftHand;
 	bool mUseDisplacement;
+	bool mIsNeedEmitGI;
 
 public:
 	EH_display_callback display_callback;

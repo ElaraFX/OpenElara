@@ -549,8 +549,7 @@ struct EH_Sky
 		enabled(true),
 		intensity(1.0f),
 		hdri_name(NULL),
-		hdri_rotation(0.0f),
-		enable_emit_GI(false)
+		hdri_rotation(0.0f)
 	{
 
 	}

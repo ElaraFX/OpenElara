@@ -520,7 +520,8 @@ EssExporter::EssExporter(void) :
 	progress_callback(NULL),
 	log_callback(NULL),
 	mIsLeftHand(false),
-	mUseDisplacement(false)
+	mUseDisplacement(false),
+	mIsNeedEmitGI(true)
 {
 	mLightSamples = 16;
 }
@@ -1126,6 +1127,11 @@ void EssExporter::SetGamma(const EH_Gamma &gamma)
 
 bool EssExporter::AddLight(const EH_Light& light, std::string &lightName, bool is_show_area)
 {
+	if(light.type == EH_LIGHT_PORTAL)
+	{
+		mIsNeedEmitGI = false;
+	}
+
 	std::string instanceName = ::AddLight(mWriter, light, lightName, mEnvName, mRootPath, light.sample_num_coefficient * mLightSamples, is_show_area);
 	if (instanceName != "")
 	{
@@ -1236,6 +1242,13 @@ void EssExporter::EndExport()
 		mWriter.EndNode();
 
 		mUseDisplacement = false;
+	}
+
+	if(!mEnvName.empty())
+	{
+		mWriter.BeginNode("output_result", "global_environment");
+		mWriter.AddBool("env_emits_GI", mIsNeedEmitGI);
+		mWriter.EndNode();
 	}
 
 	mWriter.BeginNode("instgroup", g_inst_group_name);
