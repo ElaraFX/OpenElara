@@ -38,7 +38,7 @@ int main()
 	/* 输入的文件名都不支持中文 */
 	EH_Context *pContext = EH_create();
 	EH_ExportOptions option;
-	option.base85_encoding = false;
+	option.base85_encoding = true;
 	option.left_handed = false;
 	EH_begin_export(pContext, "test.ess", &option); /* ess是本地生成路径 */
 
