@@ -75,19 +75,19 @@ size_t base85_calc_encode_bound(size_t input_length)
 
 size_t base85_encode(const BYTE *data, size_t input_length, BYTE *encoded_data)
 {
-	size_t remainder = input_length % 4;
-	size_t padding_size = 0;
+	unsigned int remainder = input_length % 4;
+	unsigned int padding_size = 0;
 	if (remainder > 0)
 	{
 		padding_size = 4 - remainder;
 	}
-	size_t padded_length = input_length + padding_size;
-	size_t output_length = (padded_length / 4) * 5 - padding_size;
+	unsigned int padded_length = input_length + padding_size;
+	unsigned int output_length = (padded_length / 4) * 5 - padding_size;
 
-	size_t char_nbr = 0;
-	for (size_t byte_nbr = 0; byte_nbr < padded_length; byte_nbr += 4)
+	unsigned int char_nbr = 0;
+	for (unsigned int byte_nbr = 0; byte_nbr < padded_length; byte_nbr += 4)
 	{
-		size_t value = 0;
+		unsigned int value = 0;
 		if (byte_nbr + 0 < input_length)
 		{
 			value += (data[byte_nbr + 0] << 3 * 8);
@@ -133,7 +133,7 @@ size_t base85_encode(const BYTE *data, size_t input_length, BYTE *encoded_data)
 
 	encoded_data[char_nbr] = '\0';
 
-    return char_nbr + 1;
+	return char_nbr + 1;
 }
 
 
@@ -344,7 +344,10 @@ void EssWriter::AddIndexArray(const char* name, const unsigned int* pIndexArray,
 		size_t realSize = base85_encode((BYTE*)pIndexArray, arraySize * sizeof(unsigned int), pOutBuffer);
 		mStream.write((char*)pOutBuffer, realSize);
 		mStream << endl;
-		assert(memSize == realSize);
+		if (memSize != realSize)
+		{
+			printf("Error! MemSize != RealSize in AddIndexArray\n");
+		}
 		delete[] pOutBuffer;
 		pOutBuffer = NULL;
 	}
@@ -398,7 +401,10 @@ void EssWriter::AddVectorArray(const char* name, const eiVector* pVectorArray, s
 
 		mStream.write((char*)pOutBuffer, realSize);
 		mStream << endl;
-		assert(memSize == realSize);
+		if (memSize != realSize)
+		{
+			printf("Error! MemSize != RealSize in AddVectorArray\n");
+		}
 		delete[] pOutBuffer;
 		pOutBuffer = NULL;
 	}
@@ -429,7 +435,10 @@ void EssWriter::AddVector2Array(const char* name, const eiVector2* pVectorArray,
 
 		mStream.write((char*)pOutBuffer, realSize);
 		mStream << endl;
-		assert(memSize == realSize);
+		if (memSize != realSize)
+		{
+			printf("Error! MemSize != RealSize in AddVector2Array\n");
+		}
 		delete[] pOutBuffer;
 		pOutBuffer = NULL;
 	}
@@ -460,7 +469,10 @@ void EssWriter::AddPointArray(const char* name, const eiVector* pPointArray, siz
 
 		mStream.write((char*)pOutBuffer, realSize);
 		mStream << endl;
-		assert(memSize == realSize);
+		if (memSize != realSize)
+		{
+			printf("Error! MemSize != RealSize in AddPointArray\n");
+		}
 		delete[] pOutBuffer;
 		pOutBuffer = NULL;
 	}
