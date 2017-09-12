@@ -357,50 +357,50 @@ struct EH_Material
 	bool backface_cull;			/**< Use backface cull? */
 
 	/* Diffuse layer */
-	float diffuse_weight;
-	EH_RGB diffuse_color;		/**< Diffuse color */
+	float diffuse_weight;		/**< Diffuse color weight, Range: [0, 1], default: 0.7 */
+	EH_RGB diffuse_color;		/**< Diffuse color, Range: [0, inf), default: (1 1 1) */  
 	EH_Texture diffuse_tex;		/**< Diffuse texture */
-	float roughness;
-	float backlight;
+	float roughness;			/**< Oren-Nayar based Roughness, Range: [0, 1], default: 0 */
+	float backlight;			/**< Lights can illuminate surface from the back, providing a translucent look, Range: [0, 1], default: 0 */
 
 	/* Specular layer */
-	float specular_weight;
-	EH_RGB specular_color;		/**< Specular color */
+	float specular_weight;		/**< Specular color weight, Range: [0, 1], default: 0.2 */
+	EH_RGB specular_color;		/**< Specular color, Range: [0, inf), default: (1 1 1) */
 	EH_Texture specular_tex;	/**< Specular texture */
-	float glossiness;
-	float specular_fresnel;
-	float anisotropy;
-	float rotation;
+	float glossiness;			/**< Glossiness, Range: [0, 100], default: 90 */
+	float specular_fresnel;		/**< IOR for adjusting Fresnel effect using Schlick's approximation, Range: [0, inf), default: 1.5 */
+	float anisotropy;			/**< Lower value gives a more anisotropic look. No anisotropic effect when the value is 1, Range: [0, 1], default: 1 */
+	float rotation;				/**< Rotate the anisotropic BRDF around shading normal with given angle in radians, Range: [0, 2*PI], default: 0 */
 
 	/* Transparency layer */
-	float transp_weight;		/**< Transparency weight */
-	bool transp_invert_weight;
+	float transp_weight;		/**< Transparency weight, Range: [0, 1], default: 0 */
+	bool transp_invert_weight;	/**< A Boolean, when the value is true, invert transparency weight, making it (1 - transparency_weight) */
 	EH_Texture transp_tex;		/**< Transparency texture */
 
 	/* Bump mapping */
-	float bump_weight;
+	float bump_weight;			/**< bump weight, Range: (-inf, inf), default: 0 */
 	EH_Texture bump_tex;		/**< The texture for bump mapping */
 	bool normal_bump;			/**< The bump texture is actually a normal map? */
 
 	/* Mirror layer */			/**< Mirror not used */
-	float mirror_weight;
-	EH_RGB mirror_color;
-	float mirror_fresnel;
+	float mirror_weight;		/**< Weight of mirror reflection, Range: [0, 1], default: 0 */
+	EH_RGB mirror_color;		/**< Tint of mirror reflection, Range: [0, inf), default: (1 1 1) */ 
+	float mirror_fresnel;		/**< IOR for adjusting Fresnel effect using Schlick's approximation, Range: [0, inf), default: 1.5 */
 
 	/* Refraction layer */
-	float refract_weight;
-	bool refract_invert_weight;
-	EH_RGB refract_color;
-	float ior;
-	float refract_glossiness;
+	float refract_weight;		/**< Weight of refraction, Range: [0, 1], default: 0 */
+	bool refract_invert_weight; /**< A Boolean, when the value is true, invert refraction weight, making it (1 - refraction_weight) */
+	EH_RGB refract_color;		/**< Tint of refraction, Range: [0, inf), default: (1 1 1) */ 
+	float ior;					/**< Index of refraction, which affects both the direction of refracted rays and the Fresnel effect, Range: [0, inf), default: 1.5 */
+	float refract_glossiness;	/**< Higher value gives a sharper refraction, while lower value gives a more blurred refraction, Range: [0, 100], default: 100 */
 
 	/* Emission layer */
-	float emission_weight;
-	EH_RGB emission_color;
-	EH_Texture emission_tex;		/**< Emission texture */
+	float emission_weight;		/**< Intensity of emission, Range: [0, inf), default: 0 */
+	EH_RGB emission_color;		/**< Tint of emission, Range: [0, inf), default: (1 1 1) */ 
+	EH_Texture emission_tex;	/**< Emission texture */
 
 	/* Displace layer */
-	float displace_weight;
+	float displace_weight;		/**< displacement mapping weight, Range: [0, inf), default: 0 */
 	EH_Texture displace_tex;
 
 	EH_Material() :
