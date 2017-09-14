@@ -90,6 +90,7 @@ enum EH_LightType
 	EH_LIGHT_QUAD,				/**< rectangular light */
 	EH_LIGHT_SPHERE,			/**< spherical light */
 	EH_LIGHT_IES,				/**< Light with IES distribution */
+	EH_LIGHT_SPOT,				/**< spotlight */
 };
 
 
@@ -508,7 +509,8 @@ struct EH_Light
 	float intensity;
 	EH_Vec2 size;				/**< Use size[0] as radius for sphere light, 
 									 Use size[0] as width and use size[1] as 
-									 height for quad light */
+									 height for quad light. for spotlight, use 
+									 size[0] as spread and use size[1] as deltaangle */
 	EH_Mat light_to_world;		/**< Light local space to world space transform */
 	int sample_num_coefficient;    /**< Light sample num coefficient, default value is 1*/
 	EH_Vec light_color;
