@@ -152,8 +152,6 @@ inline bool CheckVec3Big(eiVector &val)
 #define ER_GEO_TRANS_EPS		0.00001f
 #define ER_TRIANGLE_AREA_EPS	0.000001f
 
-extern std::string utf16_to_utf8(const char* str);
-
 const char* AddDefaultOptions(EssWriter& writer)
 {
 	static const char* optName = "GlobalOption";

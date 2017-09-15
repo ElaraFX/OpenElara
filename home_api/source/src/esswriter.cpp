@@ -34,15 +34,6 @@ inline bool Checkei_vector2Nan(eiVector2 &val)
 	return false;
 }
 
-std::string utf16_to_utf8(const char* str)
-{
-	std::string utf8;
-	//utf8.resize(WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL));
-	//WideCharToMultiByte(CP_UTF8, 0, str, -1, &utf8[0], (int)utf8.size(), NULL, NULL);
-	return utf8;
-}
-
-
 /** Standard conforming implementation of Base85 encoding
  * reference:
  * https://raw.githubusercontent.com/zeromq/rfc/master/src/spec_32.c
@@ -139,10 +130,6 @@ size_t base85_encode(const BYTE *data, size_t input_length, BYTE *encoded_data)
 
 #define CHECK_STREAM() if(!mStream.is_open()) return;
 #define CHECK_EDIT_MODE() if(!mInNode) return;
-#define STD_WARP(x) "\"" << (utf16_to_utf8(x).data()) << "\""
-#define ADD_PROPERTY_ITEM(decl, func) \
-	decl value;\
-	if (propMap.get_property(it->first, value)) { func(it->first, value); }
 
 EssWriter::EssWriter()
 	:mInNode(false)

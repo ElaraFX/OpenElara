@@ -325,7 +325,7 @@ void EH_convert_native_arguments(int argc, const char *argv[])
 		return;
 
 	int native_argc;
-	std::vector<std::string> argvList;
+	static std::vector<std::string> argvList;
 	wchar_t **native_argv = CommandLineToArgvW(GetCommandLineW(), &native_argc);
 
 	if (!native_argv || native_argc != argc)
