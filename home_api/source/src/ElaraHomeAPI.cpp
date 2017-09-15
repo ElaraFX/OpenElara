@@ -332,8 +332,9 @@ void EH_convert_native_arguments(int argc, const char *argv[])
 		return;
 
 	for (int i = 0; i < argc; i++) {
-		std::string utf8_arg = EH_utf16_to_utf8(native_argv[i]);
+		char* utf8_arg = EH_utf16_to_utf8(native_argv[i]);
 		argvList.push_back(utf8_arg);
+		delete[] utf8_arg;
 	}
 	for (int i = 0; i < argc; i++) {
 		argv[i] = argvList[i].c_str();
