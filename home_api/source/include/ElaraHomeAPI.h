@@ -246,6 +246,7 @@ struct EH_Exposure
 };
 
 /** Set render image exposure, you MUST call this function after set EH_RenderOptions
+	use this function after EH_set_render_options
 */
 EH_API void EH_set_exposure(EH_Context *ctx, const EH_Exposure *exposure);
 
@@ -558,6 +559,7 @@ struct EH_Sky
 };
 
 /** Set the current sky environment.
+	use this function before EH_set_camera
  */
 EH_API void EH_set_sky(EH_Context *ctx, const EH_Sky *sky);
 
