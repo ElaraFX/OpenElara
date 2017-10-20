@@ -518,7 +518,8 @@ struct EH_Light
 	EH_Light() :
 		ies_filename(NULL),
 		type(EH_LIGHT_SPHERE),
-		sample_num_coefficient(1)
+		sample_num_coefficient(1),
+		intensity(1.0f)
 	{
 		memset(size, 0, sizeof(EH_Vec2));
 		memset(light_to_world, 0, sizeof(light_to_world));
