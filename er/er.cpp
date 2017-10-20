@@ -981,6 +981,38 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -random_lights\n");
 					}
 				}
+				else if (strcmp(argv[i], "-light_cutoff") == 0)
+				{
+					// -light_cutoff value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_scalar("options", "light_cutoff", (eiScalar)atof(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -light_cutoff\n");
+					}
+				}
+				else if (strcmp(argv[i], "-light_sample_quality") == 0)
+				{
+					// -light_sample_quality value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_scalar("options", "light_sample_quality", (eiScalar)atof(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -light_sample_quality\n");
+					}
+				}
 				else if (strcmp(argv[i], "-diffuse_depth") == 0)
 				{
 					// -diffuse_depth value
@@ -1365,6 +1397,38 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -GI_cache_indirect_glossy\n");
 					}
 				}
+				else if (strcmp(argv[i], "-min_light_importance") == 0)
+				{
+					// -min_light_importance value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_scalar("options", "min_light_importance", (eiScalar)atof(value));
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -min_light_importance\n");
+					}
+				}
+				else if (strcmp(argv[i], "-light_nonuniform_scaling") == 0)
+				{
+					// -light_nonuniform_scaling value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_bool("options", "light_nonuniform_scaling", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -light_nonuniform_scaling\n");
+					}
+				}
 				else if (strcmp(argv[i], "-GI_cache_adaptive") == 0)
 				{
 					// -GI_cache_adaptive value
@@ -1527,6 +1591,22 @@ int main_body(int argc, char *argv[])
 					else
 					{
 						ei_error("No enough arguments specified for command: -caustic\n");
+					}
+				}
+				else if (strcmp(argv[i], "-shadow") == 0)
+				{
+					// -shadow value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_bool("options", "shadow", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -shadow\n");
 					}
 				}
 				else if (strcmp(argv[i], "-resolution") == 0)
@@ -1757,6 +1837,22 @@ int main_body(int argc, char *argv[])
 						ei_error("No enough arguments specified for command: -shader_specialization\n");
 					}
 				}
+				else if (strcmp(argv[i], "-use_mis") == 0)
+				{
+					// -use_mis value
+					if ((i + 1) < argc)
+					{
+						const char *value = argv[i + 1];
+
+						ei_override_bool("options", "use_mis", strcmp(value, "on") == 0 ? EI_TRUE : EI_FALSE);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -use_mis\n");
+					}
+				}
 				else if (strcmp(argv[i], "-dongle_activate") == 0)
 				{
 					// -dongle_activate code1 code2 license_code
@@ -1807,6 +1903,21 @@ int main_body(int argc, char *argv[])
 					else
 					{
 						ei_error("No enough arguments specified for command: -activate\n");
+					}
+				}
+				else if (strcmp(argv[i], "-licsvr_addr") == 0)
+				{
+					if ((i + 1) < argc)
+					{
+						const char *server_addr = argv[i + 1];
+
+						ei_set_license_server(server_addr);
+
+						i += 1;
+					}
+					else
+					{
+						ei_error("No enough arguments specified for command: -licsvr_addr\n");
 					}
 				}
 				else if (strcmp(argv[i], "-render") == 0)
