@@ -52,19 +52,19 @@ struct RenderProcess
 	eiTimer						first_pixel_timer;
 	eiBool						is_first_pass;
 	std::string					aov_name;
-	eiBool						need_GI_timer;
 	eiBool						is_idle;
 	eiInt						start_idle_time;
 	eiInt						idle_threshold;
 	eiBool						last_render_is_interactive;
+	eiInt						org_engine;
+	eiInt						org_min_samples;
 	eiInt						org_max_samples;
 	eiInt						org_diffuse_samples;
 	eiInt						org_sss_samples;
 	eiInt						org_volume_indirect_samples;
 	eiInt						org_random_lights;
+	eiScalar					org_light_sample_quality;
 	eiInt						org_progressive;
-	eiInt						new_max_samples;
-	eiInt						new_random_lights;
 
 	RenderProcess(
 		eiInt res_x, 
@@ -93,19 +93,19 @@ struct RenderProcess
 		const eiColor blackColor = ei_color(0.0f);
 		originalBuffer.resize(imageWidth * imageHeight, blackColor);
 		aov_name = _aov_name;
-		need_GI_timer = EI_FALSE;
 		is_idle = EI_TRUE;
 		start_idle_time = ei_get_time();
-		idle_threshold = 20;
+		idle_threshold = 3;
 		last_render_is_interactive = FALSE;
+		org_engine = EI_ENGINE_HYBRID_PATH_TRACER;
+		org_min_samples = -3;
 		org_max_samples = 1;
 		org_diffuse_samples = 1;
 		org_sss_samples = 1;
 		org_volume_indirect_samples = 1;
 		org_random_lights = 16;
+		org_light_sample_quality = 0.05f;
 		org_progressive = EI_FALSE;
-		new_max_samples = 1;
-		new_random_lights = 16;
 	}
 
 	~RenderProcess()
@@ -249,29 +249,6 @@ static void rprocess_job_started(
 	ei_read_unlock(rp->bufferLock);
 }
 
-eiColor hsv_to_rgb (eiScalar h, eiScalar s, eiScalar v)
-{
-    // Reference for this technique: Foley & van Dam
-    if (s < 0.0001f) {
-      return ei_color (v, v, v);
-    } else {
-        h = 6.0f * (h - floorf(h));  // expand to [0..6)
-        int hi = (int) h;
-        float f = h - hi;
-        float p = v * (1.0f-s);
-        float q = v * (1.0f-s*f);
-        float t = v * (1.0f-s*(1.0f-f));
-        switch (hi) {
-        case 0 : return ei_color (v, t, p);
-        case 1 : return ei_color (q, v, p);
-        case 2 : return ei_color (p, v, t);
-        case 3 : return ei_color (p, q, v);
-        case 4 : return ei_color (t, p, v);
-        default: return ei_color (v, p, q);
-	}
-    }
-}
-
 static void rprocess_job_finished(
 	eiProcess *process, 
 	const eiTag job, 
@@ -382,7 +359,7 @@ static void rprocess_job_finished(
 						h = 2.0f * (1.0f - eiScalar(info_dest.num_samples) / eiScalar(cur_samples_num)) / 3.0f;
 						if (h > 1) h -= 1;
 					}
-					originalBuffer[i - fb_rect.left] = hsv_to_rgb(h, 1, 1);
+					originalBuffer[i - fb_rect.left] = ei_hsv_to_rgb(h, 1, 1);
 				}
 				else
 				{
@@ -475,17 +452,15 @@ static void display_callback(eiInt frameWidth, eiInt frameHeight, void *param)
 			{
 				rp->start_idle_time = current_time;
 				idle_timeout = EI_TRUE;
-				printf("******** IDLE %d ********\n", current_time);
-				rp->idle_threshold = 5;
 			}
 		}
 
-		eiBool switch_to_GI_cache = (
-			rp->need_GI_timer && 
+		eiBool switch_to_final_render = (
 			rp->last_render_is_interactive && 
-			idle_timeout);
+			idle_timeout && 
+			!rp->is_first_pass);
 
-		if (has_user_action || switch_to_GI_cache)
+		if (has_user_action || switch_to_final_render)
 		{
 			if (rp->renderThread != NULL) /* is rendering */
 			{
@@ -502,36 +477,37 @@ static void display_callback(eiInt frameWidth, eiInt frameHeight, void *param)
 			const char *opt_name = rp->render_params->options;
 			if (opt_name != NULL)
 			{
-				if (rp->need_GI_timer)
+				eiBool need_init;
+				eiNode *opt_node = ei_edit_node(opt_name, &need_init);
+
+				if (switch_to_final_render)
 				{
-					eiBool need_init;
-					eiNode *opt_node = ei_edit_node(opt_name, &need_init);
-
-					if (switch_to_GI_cache)
-					{
-						ei_node_enum(opt_node, "engine", "GI cache");
-						ei_node_int(opt_node, "max_samples", rp->org_max_samples);
-						ei_node_int(opt_node, "diffuse_samples", rp->org_diffuse_samples);
-						ei_node_int(opt_node, "sss_samples", rp->org_sss_samples);
-						ei_node_int(opt_node, "volume_indirect_samples", rp->org_volume_indirect_samples);
-						ei_node_int(opt_node, "random_lights", rp->org_random_lights);
-						ei_node_bool(opt_node, "progressive", rp->org_progressive);
-						rp->last_render_is_interactive = EI_FALSE;
-					}
-					else
-					{
-						ei_node_enum(opt_node, "engine", "hybrid path tracer");
-						ei_node_int(opt_node, "max_samples", rp->new_max_samples);
-						ei_node_int(opt_node, "diffuse_samples", 1);
-						ei_node_int(opt_node, "sss_samples", 1);
-						ei_node_int(opt_node, "volume_indirect_samples", 1);
-						ei_node_int(opt_node, "random_lights", rp->new_random_lights);
-						ei_node_bool(opt_node, "progressive", EI_TRUE);
-						rp->last_render_is_interactive = EI_TRUE;
-					}
-
-					ei_end_edit_node(opt_node);
+					ei_node_int(opt_node, "engine", rp->org_engine);
+					ei_node_int(opt_node, "min_samples", rp->org_min_samples);
+					ei_node_int(opt_node, "max_samples", rp->org_max_samples);
+					ei_node_int(opt_node, "diffuse_samples", rp->org_diffuse_samples);
+					ei_node_int(opt_node, "sss_samples", rp->org_sss_samples);
+					ei_node_int(opt_node, "volume_indirect_samples", rp->org_volume_indirect_samples);
+					ei_node_int(opt_node, "random_lights", rp->org_random_lights);
+					ei_node_scalar(opt_node, "light_sample_quality", rp->org_light_sample_quality);
+					ei_node_bool(opt_node, "progressive", rp->org_progressive);
+					rp->last_render_is_interactive = EI_FALSE;
 				}
+				else
+				{
+					ei_node_int(opt_node, "engine", EI_ENGINE_HYBRID_PATH_TRACER);
+					ei_node_int(opt_node, "min_samples", -3);
+					ei_node_int(opt_node, "max_samples", 1);
+					ei_node_int(opt_node, "diffuse_samples", 1);
+					ei_node_int(opt_node, "sss_samples", 1);
+					ei_node_int(opt_node, "volume_indirect_samples", 1);
+					ei_node_int(opt_node, "random_lights", 16);
+					ei_node_scalar(opt_node, "light_sample_quality", 0.05f);
+					ei_node_bool(opt_node, "progressive", EI_TRUE);
+					rp->last_render_is_interactive = EI_TRUE;
+				}
+
+				ei_end_edit_node(opt_node);
 			}
 
 			/* modify viewport parameters */
@@ -2077,94 +2053,28 @@ int main_body(int argc, char *argv[])
 									eiBool need_init;
 									eiNode *opt_node = ei_edit_node(render_params.options, &need_init);
 
+									rp.last_render_is_interactive = EI_TRUE;
+									rp.org_engine = ei_node_get_int(opt_node, ei_node_find_param(opt_node, "engine"));
+									rp.org_min_samples = ei_node_get_int(opt_node, ei_node_find_param(opt_node, "min_samples"));
+									rp.org_max_samples = ei_node_get_int(opt_node, ei_node_find_param(opt_node, "max_samples"));
+									rp.org_diffuse_samples = ei_node_get_int(opt_node, ei_node_find_param(opt_node, "diffuse_samples"));
+									rp.org_sss_samples = ei_node_get_int(opt_node, ei_node_find_param(opt_node, "sss_samples"));
+									rp.org_volume_indirect_samples = ei_node_get_int(opt_node, ei_node_find_param(opt_node, "volume_indirect_samples"));
+									rp.org_random_lights = ei_node_get_int(opt_node, ei_node_find_param(opt_node, "random_lights"));
+									rp.org_light_sample_quality = ei_node_get_scalar(opt_node, ei_node_find_param(opt_node, "light_sample_quality"));
+									rp.org_progressive = progressive;
+
 									ei_node_enum(opt_node, "accel_mode", "large");
 
-									eiInt max_samples = 1;
-									eiIndex max_samples_pid = ei_node_find_param(opt_node, "max_samples");
-									if (max_samples_pid != EI_NULL_INDEX)
-									{
-										max_samples = ei_node_get_int(opt_node, max_samples_pid);
-									}
-									printf("AA samples: %d\n", max_samples);
-
-									eiInt diffuse_samples = 1;
-									eiIndex diffuse_samples_pid = ei_node_find_param(opt_node, "diffuse_samples");
-									if (diffuse_samples_pid != EI_NULL_INDEX)
-									{
-										diffuse_samples = ei_node_get_int(opt_node, diffuse_samples_pid);
-									}
-									printf("Diffuse samples: %d\n", diffuse_samples);
-
-									eiInt sss_samples = 1;
-									eiIndex sss_samples_pid = ei_node_find_param(opt_node, "sss_samples");
-									if (sss_samples_pid != EI_NULL_INDEX)
-									{
-										sss_samples = ei_node_get_int(opt_node, sss_samples_pid);
-									}
-									printf("SSS samples: %d\n", sss_samples);
-
-									eiInt volume_indirect_samples = 1;
-									eiIndex volume_indirect_samples_pid = ei_node_find_param(opt_node, "volume_indirect_samples");
-									if (volume_indirect_samples_pid != EI_NULL_INDEX)
-									{
-										volume_indirect_samples = ei_node_get_int(opt_node, volume_indirect_samples_pid);
-									}
-									printf("Volume indirect samples: %d\n", volume_indirect_samples);
-
-									eiInt random_lights = 1;
-									eiIndex random_lights_pid = ei_node_find_param(opt_node, "random_lights");
-									if (random_lights_pid != EI_NULL_INDEX)
-									{
-										random_lights = ei_node_get_int(opt_node, random_lights_pid);
-									}
-									printf("Random lights: %d\n", random_lights);
-
-									eiInt max_dist_samples = max(diffuse_samples, max(sss_samples, volume_indirect_samples));
-									eiInt new_max_samples = max_samples;
-									if (new_max_samples > 16)
-									{
-										new_max_samples *= max(1, max_dist_samples / (new_max_samples / 16));
-									}
-									else
-									{
-										new_max_samples *= max_dist_samples;
-									}
-
-									printf("Interactive samples: %d\n", new_max_samples);
-									ei_node_set_int(opt_node, max_samples_pid, new_max_samples);
-
+									ei_node_int(opt_node, "engine", EI_ENGINE_HYBRID_PATH_TRACER);
+									ei_node_int(opt_node, "min_samples", -3);
+									ei_node_int(opt_node, "max_samples", 1);
 									ei_node_int(opt_node, "diffuse_samples", 1);
 									ei_node_int(opt_node, "sss_samples", 1);
 									ei_node_int(opt_node, "volume_indirect_samples", 1);
-
-									eiInt new_random_lights = random_lights;
-									if (new_random_lights <= 0 || new_random_lights > 16)
-									{
-										new_random_lights = 16;
-									}
-									ei_node_int(opt_node, "random_lights", new_random_lights);
+									ei_node_int(opt_node, "random_lights", 16);
+									ei_node_scalar(opt_node, "light_sample_quality", 0.05f);
 									ei_node_bool(opt_node, "progressive", EI_TRUE);
-
-									eiInt engine = EI_ENGINE_HYBRID_PATH_TRACER;
-									eiIndex engine_pid = ei_node_find_param(opt_node, "engine");
-									if (engine_pid != EI_NULL_INDEX)
-									{
-										engine = ei_node_get_int(opt_node, engine_pid);
-									}
-									if (engine == EI_ENGINE_GI_CACHE)
-									{
-										ei_node_enum(opt_node, "engine", "hybrid path tracer");
-										rp.need_GI_timer = EI_TRUE;
-										rp.last_render_is_interactive = EI_TRUE;
-										rp.org_max_samples = max_samples;
-										rp.org_diffuse_samples = diffuse_samples;
-										rp.org_sss_samples = sss_samples;
-										rp.org_volume_indirect_samples = volume_indirect_samples;
-										rp.org_random_lights = random_lights;
-										rp.org_progressive = progressive;
-										rp.new_max_samples = new_max_samples;
-										rp.new_random_lights = new_random_lights;
-									}
 
 									ei_end_edit_node(opt_node);
 								}
