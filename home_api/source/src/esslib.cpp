@@ -865,7 +865,7 @@ std::string AddNormalBump(EssWriter& writer, const std::string &normalMap){
 std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &matName, const std::string &rootPath, bool &use_displace)
 {
 	float eps = 0.0000001;
-	std::string transparent_tex_node, diffuse_tex_node, normal_map_tex_node, specular_tex_node, emission_tex_node, displace_tex_node;
+	std::string transparent_tex_node, diffuse_tex_node, normal_map_tex_node, specular_tex_node, emission_tex_node, displace_tex_node, refract_tex_node;
 	if(mat.diffuse_tex.filename && strlen(mat.diffuse_tex.filename) > 0)
 	{
 		diffuse_tex_node = AddTexture(writer, mat.diffuse_tex.filename, mat.diffuse_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_d", rootPath);
@@ -893,6 +893,10 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	if(mat.displace_tex.filename && strlen(mat.displace_tex.filename) > 0)
 	{
 		displace_tex_node = AddTexture(writer, mat.displace_tex.filename, mat.displace_tex.repeat_u, mat.displace_tex.repeat_v, matName + "_disp", rootPath);
+	}
+	if(mat.refract_tex.filename && strlen(mat.refract_tex.filename) > 0)
+	{
+		refract_tex_node = AddTexture(writer, mat.refract_tex.filename, mat.refract_tex.repeat_u, mat.refract_tex.repeat_v, matName + "_refract", rootPath);
 	}
 
 	std::string ei_standard_node = matName + "_ei_stn";
@@ -937,6 +941,15 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 		writer.LinkParam("displace_map", displace_tex_node, "result");
 		use_displace = true;
 	}
+	if(mat.refract_tex.filename && strlen(mat.refract_tex.filename) > 0)
+	{
+		writer.LinkParam("refraction_weight", refract_tex_node, "result");
+	}
+	else
+	{
+		eiVector refraction_color = ei_vector(mat.refract_color[0], mat.refract_color[1], mat.refract_color[2]);
+		writer.AddColor("refraction_color", refraction_color);
+	}
 
 	writer.AddScaler("diffuse_weight", mat.diffuse_weight);
 	writer.AddScaler("roughness", mat.roughness);
@@ -954,8 +967,6 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	writer.AddColor("reflection_color", reflection_color);
 	writer.AddScaler("fresnel_ior", mat.mirror_fresnel);
 
-	eiVector refraction_color = ei_vector(mat.refract_color[0], mat.refract_color[1], mat.refract_color[2]);
-	writer.AddColor("refraction_color", refraction_color);
 	writer.AddScaler("refraction_weight", mat.refract_weight);
 	writer.AddScaler("refraction_glossiness", mat.refract_glossiness);
 	writer.AddScaler("ior", mat.ior);

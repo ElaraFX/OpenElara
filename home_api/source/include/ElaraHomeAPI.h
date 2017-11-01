@@ -393,6 +393,7 @@ struct EH_Material
 	float refract_weight;		/**< Weight of refraction, Range: [0, 1], default: 0 */
 	bool refract_invert_weight; /**< A Boolean, when the value is true, invert refraction weight, making it (1 - refraction_weight) */
 	EH_RGB refract_color;		/**< Tint of refraction, Range: [0, inf), default: (1 1 1) */ 
+	EH_Texture refract_tex;		/**< Refract texture */
 	float ior;					/**< Index of refraction, which affects both the direction of refracted rays and the Fresnel effect, Range: [0, inf), default: 1.5 */
 	float refract_glossiness;	/**< Higher value gives a sharper refraction, while lower value gives a more blurred refraction, Range: [0, 100], default: 100 */
 
