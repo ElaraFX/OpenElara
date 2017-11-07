@@ -727,6 +727,11 @@ void TranslateLight(EssWriter& writer, const char *pTypeName, const EH_Light &li
 		writer.AddColor("color", light_default_color);
 		writer.AddScaler("intensity", light.intensity);
 	}
+	else if (light.type == EH_LIGHT_POINT)
+	{
+		writer.AddColor("color", light_default_color);
+		writer.AddScaler("intensity", light.intensity);
+	}
 
 	writer.AddInt("samples", samples);
 	writer.EndNode();
@@ -777,6 +782,9 @@ std::string AddLight(EssWriter& writer, const EH_Light& light, std::string &ligh
 		break;
 	case EH_LIGHT_SPOT:
 		TranslateLight(writer, "spotlight", light, lightName, envName, samples);
+		break;
+	case EH_LIGHT_POINT:
+		TranslateLight(writer, "pointlight", light, lightName, envName, samples);
 		break;
 	default: // default select the point light
 		TranslateLight(writer, "pointlight", light, lightName, envName, samples);

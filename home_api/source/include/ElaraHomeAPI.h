@@ -91,6 +91,7 @@ enum EH_LightType
 	EH_LIGHT_SPHERE,			/**< spherical light */
 	EH_LIGHT_IES,				/**< Light with IES distribution */
 	EH_LIGHT_SPOT,				/**< spotlight */
+	EH_LIGHT_POINT,				/**< pointlight */
 };
 
 
