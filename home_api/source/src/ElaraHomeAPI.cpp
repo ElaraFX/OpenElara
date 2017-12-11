@@ -381,6 +381,9 @@ void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt)
 {
 	switch(opt->quality)
 	{
+	case EH_DEFAULT:
+		reinterpret_cast<EssExporter*>(ctx)->AddDefaultOption();
+		break;
 	case EH_MEDIUM:
 		reinterpret_cast<EssExporter*>(ctx)->AddMediumOption();
 		break;

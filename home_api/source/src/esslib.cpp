@@ -21,8 +21,8 @@
 #include <ei.h>
 
 const char* instanceExt = "_instance";
-const char* MAX_EXPORT_ESS_DEFAULT_INST_NAME = "mtoer_instgroup_00";
-const char* g_inst_group_name = "mtoer_instgroup_00";
+const char* MAX_EXPORT_ESS_DEFAULT_INST_NAME = "GlobalInstGroupName";
+const char* g_inst_group_name = "GlobalInstGroupName";
 
 //left hand to right hand matrix
 const eiMatrix l2r = ei_matrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1);
@@ -85,7 +85,8 @@ std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& 
 	writer.EndNode();
 
 	//Add camera instance
-	std::string instanceName = itemID + instanceExt;
+	//std::string instanceName = itemID + instanceExt;
+	std::string instanceName("GlobalCameraInstanceName");
 	writer.BeginNode("instance", instanceName);
 	writer.AddRef("element",itemID);
 	eiMatrix cam_tranmat = *(eiMatrix*)(cam.view_to_world);
@@ -154,7 +155,7 @@ inline bool CheckVec3Big(eiVector &val)
 
 const char* AddDefaultOptions(EssWriter& writer)
 {
-	static const char* optName = "GlobalOption";
+	static const char* optName = "GlobalOptionsName";
 	writer.BeginNode("options", optName);
 	writer.AddInt("min_samples", -3);
 	writer.AddInt("max_samples", 16);
@@ -163,7 +164,7 @@ const char* AddDefaultOptions(EssWriter& writer)
 	writer.AddInt("volume_indirect_samples", 8);
 	writer.AddScaler("light_cutoff", 0.01);
 	writer.AddScaler("GI_cache_density", 1.0);
-	writer.AddInt("GI_cache_passes", 200);	
+	writer.AddInt("GI_cache_passes", 100);	
 	writer.AddInt("GI_cache_points", 5);
 	writer.AddEnum("GI_cache_preview", "accurate");
 	writer.AddInt("diffuse_depth", 5);
@@ -1120,6 +1121,11 @@ bool EssExporter::AddMaterial(const EH_Material& mat, std::string &matName)
 void EssExporter::AddMediumOption()
 {
 	mOptionName = AddMediumOptions(mWriter);
+}
+
+void EssExporter::AddDefaultOption()
+{
+	mOptionName = AddDefaultOptions(mWriter);
 }
 
 void EssExporter::AddLowOption()

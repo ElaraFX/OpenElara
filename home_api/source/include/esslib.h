@@ -69,6 +69,7 @@ public:
 	void AddMeshInstance(const char *instName, const EH_MeshInstance &meshInst);
 	bool AddLight(const EH_Light& light, std::string &lightName, bool is_show_area);
 	bool AddMaterial(const EH_Material& mat, std::string &matName);
+	void AddDefaultOption();
 	void AddMediumOption();
 	void AddLowOption();
 	void AddHighOption();

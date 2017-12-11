@@ -80,6 +80,7 @@ enum EH_RenderQuality
 	EH_MEDIUM = 0,		/**< medium quality good for most situations */
 	EH_FAST,			/**< very fast preview rendering */
 	EH_HIGH,			/**< super high quality rendering but slow */
+	EH_DEFAULT,			/**< default quality rendering */
 };
 
 /** Light types.
