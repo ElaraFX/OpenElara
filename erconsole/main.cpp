@@ -391,8 +391,7 @@ static void rprocess_job_finished(
         pJob->pass_id,
         &infoFrameBufferCache);
 
-    const eiInt tile_width = pJob->rect.right - pJob->rect.left + 1;
-    const eiInt tile_height = pJob->rect.bottom - pJob->rect.top + 1;
+    const eiRect4i & fb_rect = infoFrameBufferCache.m_rect;
 
 	/* write bucket updates into the original buffer */
 	const eiInt imageWidth = rp->imageWidth;
@@ -403,14 +402,14 @@ static void rprocess_job_finished(
     opacityBuffer += ((imageHeight - 1 - pJob->rect.top) * imageWidth + pJob->rect.left);
 	ei_read_lock(rp->bufferLock);
 	{
-		for (eiInt j = 0; j < tile_height; ++j)
+		for (eiInt j = fb_rect.top; j < fb_rect.bottom; ++j)
 		{
-			for (eiInt i = 0; i < tile_width; ++i)
+			for (eiInt i = fb_rect.left; i < fb_rect.right; ++i)
 			{
-				ei_framebuffer_cache_get_final(&colorFrameBufferCache, i, j, &(originalBuffer[i]));
+				ei_framebuffer_cache_get_final(&colorFrameBufferCache, i, j, &(originalBuffer[i - fb_rect.left]));
                 eiColor alpha;
                 ei_framebuffer_cache_get_final(&opacityFrameBufferCache, i, j, &alpha);
-                opacityBuffer[i] = (alpha.r + alpha.g + alpha.b) / 3.0f;
+                opacityBuffer[i - fb_rect.left] = (alpha.r + alpha.g + alpha.b) / 3.0f;
 			}
 			originalBuffer -= imageWidth;
             opacityBuffer -= imageWidth;
@@ -421,19 +420,6 @@ static void rprocess_job_finished(
 	ei_framebuffer_cache_exit(&colorFrameBufferCache);
     ei_framebuffer_cache_exit(&opacityFrameBufferCache);
 	ei_framebuffer_cache_exit(&infoFrameBufferCache);
-
-    const eiScalar job_percent = (eiScalar)ei_job_get_percent();
-	if (!ei_job_aborted())
-	{
-		/* display render progress */		
-		if (absf(rp->last_job_percent - job_percent) >= 0.5f)
-		{
-			printf("Render progress: %.1f %% ...\n", job_percent);
-			fflush(stdout);
-			rp->last_job_percent = job_percent;
-		}
-	}
-	fflush(stdout);
 }
 
 static void rprocess_info(
