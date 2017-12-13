@@ -399,8 +399,8 @@ void MainWindow::RenderNext()
 
     cmd += " -output color color ";
     cmd += ui->chkEnableFilter->isChecked() ? "on " : "off ";
-    cmd += ui->chkEnableGamma->isChecked() ? "on " : "off ";
-    cmd += "off "; //Exposure control is post effect. Ignore here.
+    cmd += "off "; // Gamma must be added after exposure control
+    cmd += "off "; // Exposure control is post effect. Ignore here.
     cmd += "temp.png";
     cmd += PresetToString();
 
@@ -896,7 +896,12 @@ void MainWindow::ApplyToneMapper()
     ui->smpTxtExposure->setText(ui->txtExpValue->text());
     if (ui->imageViewer->IsToneEnabled())
     {
-        ui->imageViewer->SetToneParameters(expValues, highlight, midtones, shadows, colorSat, whitePt);
+		float displayGamma = 2.2f;
+		if (!ui->chkEnableGamma->isChecked())
+		{
+			displayGamma = 1.0f;
+		}
+        ui->imageViewer->SetToneParameters(expValues, highlight, displayGamma * midtones, shadows, colorSat, whitePt);
     }
     ui->imageViewer->Refresh();
     if (!mCurrentScene.isEmpty())
