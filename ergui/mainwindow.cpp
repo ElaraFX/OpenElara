@@ -399,7 +399,15 @@ void MainWindow::RenderNext()
 
     cmd += " -output color color ";
     cmd += ui->chkEnableFilter->isChecked() ? "on " : "off ";
-    cmd += "off "; // Gamma must be added after exposure control
+	if (ui->imageViewer->IsToneEnabled())
+	{
+		cmd += "off "; // Gamma must be added after exposure control
+	}
+	else
+	{
+		// Exposure control is off, do gamma by ourselves
+		cmd += (ui->chkEnableGamma->isChecked()) ? "on " : "off ";
+	}
     cmd += "off "; // Exposure control is post effect. Ignore here.
     cmd += "temp.png";
     cmd += PresetToString();
