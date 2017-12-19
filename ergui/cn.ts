@@ -5,7 +5,7 @@
     <name>MainWindow</name>
     <message>
         <location filename="mainwindow.ui" line="31"/>
-        <source>Elara Render</source>
+        <source>Elara Renderer</source>
         <translation>Elara 渲染器</translation>
     </message>
     <message>
@@ -236,7 +236,7 @@
     </message>
     <message>
         <location filename="mainwindow.ui" line="1047"/>
-        <source>&amp;About Elara Render GUI...</source>
+        <source>&amp;About Elara Renderer GUI...</source>
         <translation>关于Elara渲染器(&amp;A)...</translation>
     </message>
     <message>
@@ -570,7 +570,7 @@
     </message>
     <message>
         <location filename="main.cpp" line="58"/>
-        <source>Immeidate render after launched</source>
+        <source>Immediate render after launched</source>
         <translation>启动后立即开始渲染</translation>
     </message>
     <message>
