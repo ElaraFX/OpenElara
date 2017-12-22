@@ -32,7 +32,6 @@
 
 #ifdef _DEBUG   //Debug mode  
 #pragma comment (lib,"Qt5PlatformSupportd.lib")  
-#pragma comment (lib,"qwindowsd.lib")  
 #else           //Release mode 
 #pragma comment (lib,"qtpcre.lib")  
 #pragma comment (lib,"ws2_32.lib")  
