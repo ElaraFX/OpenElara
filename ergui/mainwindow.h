@@ -15,12 +15,65 @@
 #include <set>
 #include <QTreeWidget>
 
+// Elara SDK Headers
+#include <ei.h>
+#include <ei_dataflowx.h>
+#include <ei_frame_buffer.h>
+#include <ei_base_bucket.h>
+#include <ei_timer.h>
+
 typedef std::queue<QString> RenderQueue;
 
 namespace Ui {
 class MainWindow;
 }
 class QListWidgetItem;
+class QCustomLabel;
+class MainWindow;
+
+// RGBA color (not defined in SDK headers)
+struct eiRGBA
+{
+	eiColor		rgb;
+	eiScalar	a;
+};
+
+struct RenderProcess
+{
+	eiProcess					base;
+	eiThreadHandle				renderThread;
+	eiRWLock					*bufferLock;
+	eiAtomic					bufferDirty;
+	std::vector<eiRGBA>			originalBuffer;
+	eiInt						imageWidth;
+	eiInt						imageHeight;
+	eiRenderParameters			render_params;
+	eiScalar					last_job_percent;
+	eiTimer						first_pixel_timer;
+	eiBool						is_first_pass;
+	eiBool						has_license;
+
+	RenderProcess();
+	~RenderProcess();
+
+	void init_callbacks();
+	void start_render(
+		const char *ESS_filename, 
+		const char *code1, 
+		const char *code2, 
+		const char *license, 
+		const char *texture_searchpath, 
+		const char *image_filename, 
+		bool use_filter, 
+		bool use_gamma, 
+		bool use_exposure, 
+		const char *options_params, 
+		const char *camera_params, 
+		bool use_panorama);
+	void stop_render();
+	void update_render_view(MainWindow *mainWindow);
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -39,14 +92,17 @@ public:
 	void SetLicense(QString &l);
     void EnablePanorama(bool value);
 
+	void UpdateRenderProgress(int value);
+	void UpdateRenderImage(int width, int height, float *data);
+	void RefreshRenderWindow();
+	void onRenderFinished();
+
 private slots:
     void SafeClose();
     void FileItemChanged(QListWidgetItem*);
     void FitImage();
     void FitControl();
     void ShowOption();
-    void RenderThreadFinished(int, QProcess::ExitStatus);
-    void ReadFromClient();
     void onImageScaleChanged(float);
 
     void onSharedMemTimer();
@@ -128,11 +184,10 @@ private:
     void UpdateImageStatus(QListWidgetItem* item, bool resetView);
     Ui::MainWindow *ui;
 
-    QProcess mRenderProcess;
+    RenderProcess mRenderProcess;
     QString mCurrentScene;
     RenderQueue mQueue;
     std::set<QString>  mFilesInQueue;
-    QString mErConsolePath;
     QString mTexturePath;
     QTime mRenderTime;
     QLabel mStatusText;
@@ -140,8 +195,6 @@ private:
     QProgressBar mpgsRender;
 
     QTimer mSharedMemTimer;
-    QSharedMemory mSharedMem;
-    QSharedMemory mCommandMem;
 
     QString mProjectName;
     bool mbProjectDirty;
@@ -156,7 +209,6 @@ private:
     bool CancelJob();
     void RenderNext();
     void InitializePresets();
-    QString PresetToString();
     void AddFileItem(QString& filename);
     void dragEnterEvent(QDragEnterEvent *e);
     void dropEvent(QDropEvent *e);

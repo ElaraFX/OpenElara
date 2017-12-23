@@ -1,3 +1,4 @@
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "optiondialog.h"
@@ -22,6 +23,625 @@
 
 #define W_ICONSIZE 236
 #define H_ICONSIZE 130
+
+#define MSG_QUEUE_WAIT_TIME		50
+
+static const char *g_str_on = "on";
+static const char *g_str_off = "off";
+
+// Render thread function
+static EI_THREAD_FUNC render_callback(void *param);
+
+// Elara dongle license APIs (not in SDK headers)
+EI_API void ei_dongle_license_set(eiUint code1, eiUint code2, const char *license_code);
+EI_API void ei_dongle_license_release();
+
+// Utilities for render preset parsing
+enum {
+	is_ei_bool,
+	is_ei_scalar,
+	is_ei_int,
+	is_ei_enum,
+	is_ei_token,
+	type_count
+};
+
+typedef std::map<std::string, int> ParamTypeMap;
+
+ParamTypeMap param_type_map;
+
+void SplitString(
+	const std::string & src, 
+	const std::string & sep, 
+	std::vector<std::string> & result)
+{
+	if (src.empty())
+	{
+		return;
+	}
+	std::string::size_type lastPos = 0;
+	std::string::size_type matchPos = src.find_first_of(sep);
+	while (matchPos != src.npos)
+	{
+		result.push_back(src.substr(lastPos, matchPos - lastPos));
+		lastPos = matchPos + 1;
+		matchPos = src.find_first_of(sep, lastPos);
+	}
+	if (lastPos < src.length())
+	{
+		result.push_back(src.substr(lastPos, src.length() - lastPos));
+	}
+}
+
+std::pair<std::string, std::string> SplitParam(const std::string & src)
+{
+	std::string::size_type idx = src.find_first_of('=');
+	std::string name = src.substr(0, idx);
+	std::string temp = src.substr(idx + 1, src.length() - idx - 1);
+	std::string value;
+	value.resize(temp.length());
+	// To lower case
+	transform(temp.begin(), temp.end(), temp.begin(), ::tolower);
+	// Remove space
+	std::string::size_type charStart = temp.find_first_not_of(" ");
+	std::string::size_type charEnd = temp.find_last_not_of(" ");
+	value = temp.substr(charStart, charEnd - charStart + 1);
+    return std::pair<std::string, std::string>(name, value);
+}
+
+void ValidateName(const char *node_name, std::string & name)
+{
+	if (param_type_map.find(name) == param_type_map.end())
+	{
+		EI_ASSERT(0);
+	}
+}
+
+void SetBool(const char *node_name, std::string & name, std::string & value)
+{
+	ValidateName(node_name, name);
+	if (value == "on" || 
+		value == "true")
+	{
+		ei_override_bool(node_name, name.data(), EI_TRUE);
+	}
+	else if (value == "off" || 
+		value == "false")
+	{
+        ei_override_bool(node_name, name.data(), EI_FALSE);
+	}
+	else
+	{
+		EI_ASSERT(0);
+	}
+}
+
+void SetScalar(const char *node_name, std::string & name, std::string & value)
+{
+	ValidateName(node_name, name);
+	float scalar = (float)atof(value.data());
+	ei_override_scalar(node_name, name.data(), scalar);
+}
+
+void SetInt(const char *node_name, std::string & name, std::string & value)
+{
+	ValidateName(node_name, name);
+	int intvalue = atoi(value.data());
+	ei_override_int(node_name, name.data(), intvalue);
+}
+
+void SetEnum(const char *node_name, std::string & name, std::string & value)
+{
+	ValidateName(node_name, name);
+	ei_override_enum(node_name, name.data(), value.data());
+}
+
+std::vector<std::pair<std::string, std::string> > ParseParameters(
+	const char *parameter)
+{
+	std::string strParam(parameter);
+	int lastPos = 0;
+	std::vector<std::string> allParams;
+	SplitString(strParam, ";", allParams);
+	std::vector<std::pair<std::string, std::string> > paramPairs;
+    for (std::vector<std::string>::iterator it = allParams.begin(); 
+		it != allParams.end(); ++it)
+	{
+        paramPairs.push_back(SplitParam(*it));
+	}
+	return paramPairs;
+}
+
+void SetParameters(
+	const char *node_name, 
+	std::vector<std::pair<std::string, std::string> > & paramPairs)
+{
+    for (std::vector<std::pair<std::string, std::string> >::iterator it = paramPairs.begin(); 
+		it != paramPairs.end(); ++it)
+	{
+        ParamTypeMap::iterator mapData = param_type_map.find(it->first);
+		if (mapData == param_type_map.end())
+		{
+			EI_ASSERT(0);
+            continue;
+		}
+		switch (mapData->second)
+		{
+		case is_ei_bool:
+            SetBool(node_name, it->first, it->second);
+			break;
+		case is_ei_int:
+            SetInt(node_name, it->first, it->second);
+			break;
+		case is_ei_enum:
+            SetEnum(node_name, it->first, it->second);
+			break;
+		case is_ei_scalar:
+            SetScalar(node_name, it->first, it->second);
+			break;
+		default:
+			EI_ASSERT(0);
+			break;
+		}
+	}	
+}
+
+// Render process management
+RenderProcess::RenderProcess()
+{
+	init_callbacks();
+	renderThread = NULL;
+	bufferLock = ei_create_rwlock();
+	ei_atomic_swap(&bufferDirty, EI_FALSE);
+	imageWidth = -1;
+	imageHeight = -1;
+	memset(&render_params, 0, sizeof(eiRenderParameters));
+	last_job_percent = 0.0f;
+	ei_timer_reset(&first_pixel_timer);
+	is_first_pass = EI_FALSE;
+	has_license = EI_FALSE;
+}
+
+RenderProcess::~RenderProcess()
+{
+	ei_delete_rwlock(bufferLock);
+}
+
+void RenderProcess::start_render(
+	const char *ESS_filename, 
+	const char *code1, 
+	const char *code2, 
+	const char *license, 
+	const char *texture_searchpath, 
+	const char *image_filename, 
+	bool use_filter, 
+	bool use_gamma, 
+	bool use_exposure, 
+	const char *options_params, 
+	const char *camera_params, 
+	bool use_panorama)
+{
+	// Don't start a new render if last one is still rendering
+	if (renderThread != NULL)
+	{
+		return;
+	}
+
+	// New rendering context
+	ei_context();
+
+	// Set dongle license if available
+	has_license = EI_FALSE;
+	if (code1 != NULL && strlen(code1) > 0 && 
+		code2 != NULL && strlen(code2) > 0 && 
+		license != NULL && strlen(license) > 0)
+	{
+		eiUint c1, c2;
+		sscanf(code1, "%x", &c1);
+		sscanf(code2, "%x", &c2);
+		ei_dongle_license_set(c1, c2, license);
+		has_license = EI_TRUE;
+	}
+
+	// Add texture search path
+	if (texture_searchpath != NULL && strlen(texture_searchpath) > 0)
+	{
+		ei_add_texture_searchpath(texture_searchpath);
+	}
+
+	// Setup image output
+	eiTag output_list = EI_NULL_TAG;
+	imageWidth = -1;
+	imageHeight = -1;
+
+	const char *name = "color";
+	char var_name[EI_MAX_NODE_NAME_LEN];
+	char out_name[EI_MAX_NODE_NAME_LEN];
+
+	sprintf(var_name, "var_%s", name);
+	sprintf(out_name, "out_%s", name);
+
+	ei_node("outvar", var_name);
+		ei_param_token("name", name);
+		ei_param_int("type", EI_TYPE_COLOR);
+		ei_param_bool("filter", use_filter ? EI_TRUE : EI_FALSE);
+		ei_param_bool("use_gamma", use_gamma ? EI_TRUE : EI_FALSE);
+		ei_param_bool("use_exposure", use_exposure ? EI_TRUE : EI_FALSE);
+	ei_end_node();
+
+	ei_node("output", out_name);
+		ei_param_token("filename", (image_filename != NULL) ? image_filename : "");
+		ei_param_enum("data_type", "rgb");
+		ei_param_array("var_list", ei_tab(EI_TYPE_TAG_NODE, 1));
+			ei_tab_add_node(var_name);
+		ei_end_tab();
+	ei_end_node();
+
+	eiTag out_tag = ei_find_node(out_name);
+
+	if (out_tag != EI_NULL_TAG)
+	{
+		if (output_list == EI_NULL_TAG)
+		{
+			output_list = ei_create_data_table(EI_TYPE_TAG_NODE, 1);
+		}
+
+		ei_data_table_push_back(output_list, &out_tag);
+	}
+
+	if (output_list != EI_NULL_TAG)
+	{
+		ei_override_array("camera", "output_list", output_list);
+	}
+
+	// Parse options parameters
+	if (options_params != NULL)
+	{
+		SetParameters("options", ParseParameters(options_params));
+	}
+
+	// Parse camera parameters
+	if (camera_params != NULL)
+	{
+		std::vector<std::pair<std::string, std::string> > parseResult = ParseParameters(camera_params);
+		std::vector<std::pair<std::string, std::string> > tempParams;
+        for (std::vector<std::pair<std::string, std::string> >::iterator it = parseResult.begin(); 
+			it != parseResult.end(); ++it)
+		{
+            if (it->first == "res_x")
+			{
+                imageWidth = atoi(it->second.data());
+				if (imageWidth != -1)
+				{
+                    tempParams.push_back(*it);
+				}
+			}
+            else if (it->first == "res_y")
+			{
+                imageHeight = atoi(it->second.data());
+				if (imageHeight != -1)
+				{
+                    tempParams.push_back(*it);
+				}
+			}
+		}
+        if (imageWidth > 0 && imageHeight > 0)
+        {
+            ei_override_scalar("camera", "aspect", (float)imageWidth / (float)imageHeight);
+        }
+		SetParameters("camera", tempParams);
+	}
+
+	// Setup panorama rendering if required
+	std::string lens_shader;
+	if (use_panorama)
+    {
+		ei_link("liber_shader");
+
+        const char *shader = "cubemap_camera";
+        lens_shader = std::string(shader) + std::string("_OverrideLensShaderInstance");
+
+        ei_node(shader, lens_shader.data());
+            ei_param_bool("stereo", EI_FALSE);
+            ei_param_scalar("eye_distance", 0.0f);
+        ei_end_node();
+    }
+
+	// Load ESS file, ignoring render command in it
+	if (!ei_parse2(ESS_filename, EI_TRUE))
+	{
+		return;
+	}
+
+	// Get parameters of the last render command
+	if (!ei_get_last_render_params(&render_params))
+    {
+		return;
+	}
+
+	// Override camera parameters
+    eiTag cam_inst_tag = ei_find_node(render_params.camera_inst);
+    if (cam_inst_tag != EI_NULL_TAG)
+    {
+        eiDataAccessor<eiNode> cam_inst(cam_inst_tag);
+        eiTag cam_item_tag = ei_node_get_node(cam_inst.get(), ei_node_find_param(cam_inst.get(), "element"));
+        if (cam_item_tag != EI_NULL_TAG)
+        {
+            eiDataAccessor<eiNode> cam_item(cam_item_tag);
+
+			// Get existing resolution parameters in ESS
+			imageWidth = (imageWidth == -1) ? ei_node_get_int(cam_item.get(), ei_node_find_param(cam_item.get(), "res_x")) : imageWidth;
+			imageHeight = (imageHeight == -1) ? ei_node_get_int(cam_item.get(), ei_node_find_param(cam_item.get(), "res_y")) : imageHeight;
+
+			// Apply panorama parameters
+            eiTag lens_shader_tag = ei_find_node(lens_shader.data());
+            if (lens_shader_tag != EI_NULL_TAG)
+            {
+				// Use lens shader for panorama rendering
+                ei_node_node(cam_item.get(), "lens_shader", lens_shader_tag);
+
+				// Use special resolution for panorama rendering
+                imageWidth = imageHeight * 6;
+                if (imageHeight > 0)
+                {
+                    ei_override_scalar("camera", "aspect", (float)imageWidth / (float)imageHeight);
+                    std::vector<std::pair<std::string, std::string> > tempParams;
+                    std::string sx, sy;
+                    sx.resize(255);
+                    sy.resize(255);
+                    itoa(imageWidth, &sx[0], 10);
+                    itoa(imageHeight, &sy[0], 10);
+                    tempParams.push_back(std::pair<std::string, std::string>("res_x", sx));
+                    tempParams.push_back(std::pair<std::string, std::string>("res_y", sy));
+                    SetParameters("camera", tempParams);
+                }
+            }
+        }
+    }
+
+	if (imageWidth <= 0 || imageHeight <= 0)
+	{
+		return;
+	}
+
+	// Setup render progress
+	last_job_percent = 0.0f;
+	// Setup image buffer
+	const eiRGBA transpColor = {0.0f, 0.0f, 0.0f, 0.0f};
+	ei_write_lock(bufferLock);
+	{
+		originalBuffer.resize(imageWidth * imageHeight, transpColor);
+		ei_atomic_swap(&bufferDirty, EI_TRUE);
+	}
+	ei_write_unlock(bufferLock);
+
+	// Setup render process callbacks
+	ei_job_set_process(&base);
+
+	// Setup pixel timer
+	ei_timer_reset(&first_pixel_timer);
+	ei_timer_start(&first_pixel_timer);
+	is_first_pass = EI_TRUE;
+
+	// Prepare rendering in main thread (important)
+	ei_render_prepare();
+
+	// Spawn a separate render thread to be non-blocking
+	renderThread = ei_create_thread(render_callback, &render_params, NULL);
+	ei_set_low_thread_priority(renderThread);
+}
+
+void RenderProcess::stop_render()
+{
+	// Return if not in rendering
+	if (renderThread == NULL)
+	{
+		return;
+	}
+
+	// Signal to abort the current render
+	ei_job_abort(EI_TRUE);
+
+	// Wait for render thread to finish
+	ei_wait_thread(renderThread);
+	ei_delete_thread(renderThread);
+	renderThread = NULL;
+
+	// Cleanup rendering in main thread (important)
+	ei_render_cleanup();
+
+	// Remove render process callbacks
+	ei_job_set_process(NULL);
+
+	// Release dongle license if activated
+	if (has_license)
+	{
+		ei_dongle_license_release();
+	}
+
+	// Shutdown rendering context
+	ei_end_context();
+}
+
+void RenderProcess::update_render_view(MainWindow *mainWindow)
+{
+	if (!ei_job_aborted())
+	{
+		// Rendering, update job progress
+		const eiScalar job_percent = (eiScalar)ei_job_get_percent();
+		if (absf(last_job_percent - job_percent) >= 0.5f)
+		{
+			mainWindow->UpdateRenderProgress((int)(job_percent * 100.0f));
+
+			last_job_percent = job_percent;
+		}
+	}
+	else
+	{
+		// Not rendering, try to abort and cleanup
+		stop_render();
+
+		mainWindow->onRenderFinished();
+	}
+	
+	// Update render image if buffer is dirty
+	if (ei_atomic_read(&bufferDirty))
+	{
+		eiRGBA *rawData = &originalBuffer[0];
+
+		// Reduce the locking scope as much as possible to 
+		// improve multi-threading performance
+		bool bufferUpdated = false;
+		ei_write_lock(bufferLock);
+		{
+			if (ei_atomic_read(&bufferDirty))
+			{
+				mainWindow->UpdateRenderImage(imageWidth, imageHeight, (float *)rawData);
+				ei_atomic_swap(&bufferDirty, EI_FALSE);
+				bufferUpdated = true;
+			}
+		}
+		ei_write_unlock(bufferLock);
+
+		if (bufferUpdated)
+		{
+			mainWindow->RefreshRenderWindow();
+		}
+	}
+}
+
+static void rprocess_pass_started(eiProcess *process, eiInt pass_id)
+{
+}
+
+static void rprocess_pass_finished(eiProcess *process, eiInt pass_id)
+{
+	RenderProcess *rp = (RenderProcess *)process;
+
+	if (rp->is_first_pass)
+	{
+		ei_timer_stop(&(rp->first_pixel_timer));
+		printf("Time to first pass: %d ms\n", rp->first_pixel_timer.duration);
+		rp->is_first_pass = EI_FALSE;
+	}
+}
+
+static void rprocess_job_started(
+	eiProcess *process, 
+	const eiTag job, 
+	const eiThreadID threadId)
+{
+}
+
+static void rprocess_job_finished(
+	eiProcess *process, 
+	const eiTag job, 
+	const eiInt job_state, 
+	const eiThreadID threadId)
+{
+	RenderProcess *rp = (RenderProcess *)process;
+	if (ei_db_type(job) != EI_TYPE_JOB_BUCKET)
+	{
+		return;
+	}
+
+	eiDataAccessor<eiBucketJob> pJob(job);
+	if (job_state == EI_JOB_CANCELLED)
+	{
+		return;
+	}
+
+	// Access cached image buckets
+    eiFrameBufferCache	infoFrameBufferCache;
+	eiFrameBufferCache	colorFrameBufferCache;
+    eiFrameBufferCache  opacityFrameBufferCache;
+
+	ei_framebuffer_cache_init(
+		&infoFrameBufferCache, 
+		pJob->infoFrameBuffer, 
+		pJob->pos_i, 
+		pJob->pos_j, 
+		pJob->point_spacing, 
+		pJob->pass_id, 
+		NULL);
+	ei_framebuffer_cache_init(
+		&colorFrameBufferCache, 
+		pJob->colorFrameBuffer, 
+		pJob->pos_i, 
+		pJob->pos_j, 
+		pJob->point_spacing, 
+		pJob->pass_id, 
+		&infoFrameBufferCache);
+    ei_framebuffer_cache_init(
+        &opacityFrameBufferCache,
+        pJob->opacityFrameBuffer,
+        pJob->pos_i,
+        pJob->pos_j,
+        pJob->point_spacing,
+        pJob->pass_id,
+        &infoFrameBufferCache);
+
+    const eiRect4i & fb_rect = infoFrameBufferCache.m_rect;
+
+	// Write bucket updates into the original buffer
+	const eiInt imageWidth = rp->imageWidth;
+	const eiInt imageHeight = rp->imageHeight;
+	eiRGBA *originalBuffer = &(rp->originalBuffer[0]);
+	originalBuffer += ((imageHeight - 1 - pJob->rect.top) * imageWidth + pJob->rect.left);
+	ei_read_lock(rp->bufferLock);
+	{
+		for (eiInt j = fb_rect.top; j < fb_rect.bottom; ++j)
+		{
+			for (eiInt i = fb_rect.left; i < fb_rect.right; ++i)
+			{
+				eiRGBA & pixel = originalBuffer[i - fb_rect.left];
+				ei_framebuffer_cache_get_final(&colorFrameBufferCache, i, j, &(pixel.rgb));
+                eiColor alpha;
+                ei_framebuffer_cache_get_final(&opacityFrameBufferCache, i, j, &alpha);
+				pixel.a = alpha.average();
+			}
+			originalBuffer -= imageWidth;
+		}
+		// Mark buffer dirty
+		ei_atomic_swap(&(rp->bufferDirty), EI_TRUE);
+	}
+	ei_read_unlock(rp->bufferLock);
+
+	ei_framebuffer_cache_exit(&colorFrameBufferCache);
+    ei_framebuffer_cache_exit(&opacityFrameBufferCache);
+	ei_framebuffer_cache_exit(&infoFrameBufferCache);
+}
+
+static void rprocess_info(
+	eiProcess *process, 
+	const char *text)
+{
+}
+
+void RenderProcess::init_callbacks()
+{
+	base.pass_started = rprocess_pass_started;
+	base.pass_finished = rprocess_pass_finished;
+	base.job_started = rprocess_job_started;
+	base.job_finished = rprocess_job_finished;
+	base.info = rprocess_info;
+}
+
+static EI_THREAD_FUNC render_callback(void *param)
+{
+	eiRenderParameters *render_params = (eiRenderParameters *)param;
+
+	// Register user thread to access scene database
+	ei_job_register_thread();
+
+	// Call the blocking render function in render thread
+	ei_render_run(render_params->root_instgroup, render_params->camera_inst, render_params->options);
+
+	// Unregister user thread
+	ei_job_unregister_thread();
+
+	return (EI_THREAD_FUNC_RESULT)EI_TRUE;
+}
 
 inline QString GetResultPath(const QString& sceneFile)
 {
@@ -50,23 +670,64 @@ QIcon CreateThumb(const QImage* image)
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    mRenderProcess(0),
     mProjectName("Untitled"),
     mbProjectDirty(false),
     mLastLayout(0)
 {
+	// Setup options parameters
+	param_type_map["min_samples"] = is_ei_int;
+    param_type_map["max_samples"] = is_ei_int;
+    param_type_map["progressive"] = is_ei_bool;
+    param_type_map["bucket_size"] = is_ei_int;
+    param_type_map["filter"] = is_ei_enum;
+    param_type_map["filter_size"] = is_ei_scalar;
+    param_type_map["max_displace"] = is_ei_scalar;
+    param_type_map["motion"] = is_ei_bool;
+    param_type_map["diffuse_samples"] = is_ei_int;
+    param_type_map["sss_samples"] = is_ei_int;
+    param_type_map["volume_indirect_samples"] = is_ei_int;
+    param_type_map["diffuse_depth"] = is_ei_int;
+    param_type_map["sum_depth"] = is_ei_int;
+    param_type_map["shadow"] = is_ei_bool;
+    param_type_map["caustic"] = is_ei_bool;
+    param_type_map["bias"] = is_ei_scalar;
+    param_type_map["step_size"] = is_ei_scalar;
+    param_type_map["lens"] = is_ei_bool;
+    param_type_map["volume"] = is_ei_bool;
+    param_type_map["geometry"] = is_ei_bool;
+    param_type_map["displace"] = is_ei_bool;
+    param_type_map["imager"] = is_ei_bool;
+    param_type_map["texture"] = is_ei_bool;
+    param_type_map["use_clamp"] = is_ei_bool;
+    param_type_map["clamp_value"] = is_ei_scalar;
+    param_type_map["light_cutoff"] = is_ei_scalar;
+    param_type_map["engine"] = is_ei_enum;
+    param_type_map["accel_mode"] = is_ei_enum;
+    param_type_map["GI_cache_density"] = is_ei_scalar;
+    param_type_map["GI_cache_radius"] = is_ei_scalar;
+	param_type_map["GI_cache_screen_scale"] = is_ei_scalar;
+    param_type_map["GI_cache_passes"] = is_ei_int;
+    param_type_map["GI_cache_points"] = is_ei_int;
+    param_type_map["GI_cache_preview"] = is_ei_enum;
+    param_type_map["display_gamma"] = is_ei_scalar;
+    param_type_map["texture_gamma"] = is_ei_scalar;
+    param_type_map["shader_gamma"] = is_ei_scalar;
+    param_type_map["light_gamma"] = is_ei_scalar;
+    param_type_map["exposure"] = is_ei_bool;
+    param_type_map["exposure_value"] = is_ei_scalar;
+    param_type_map["exposure_highlight"] = is_ei_scalar;
+    param_type_map["exposure_shadow"] = is_ei_scalar;
+    param_type_map["exposure_saturation"] = is_ei_scalar;
+    param_type_map["exposure_whitepoint"] = is_ei_scalar;
+    param_type_map["random_lights"] = is_ei_int;
+    // Camera parameters
+    param_type_map["res_x"] = is_ei_int;
+    param_type_map["res_y"] = is_ei_int;
+
     ui->setupUi(this);
-    mSharedMemTimer.setInterval(50);
 
-    connect(&mRenderProcess,
-            static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
-            this,
-            &MainWindow::RenderThreadFinished);
-
-    connect(&mRenderProcess,
-            static_cast<void(QProcess::*)()>(&QProcess::readyRead),
-            this,
-            &MainWindow::ReadFromClient);
+	// We use a timer to update progress and image
+    mSharedMemTimer.setInterval(MSG_QUEUE_WAIT_TIME);
 
     connect(&mSharedMemTimer,
             &QTimer::timeout,
@@ -96,14 +757,13 @@ MainWindow::MainWindow(QWidget *parent) :
     mpgsRender.setMaximum(10000);
     mpgsRender.setVisible(false);
 
-    mErConsolePath = "\"" + QApplication::applicationDirPath() + "/erconsole.exe" + "\"";
     ui->imageViewer->SetToneEnabled(ui->grpExposureCtrl->isChecked());
     QSettings setting(QApplication::applicationDirPath() + "/ergui.ini", QSettings::IniFormat);
     if (setting.contains("Tools/TexturePath"))
     {
         mTexturePath = setting.value("Tools/TexturePath").toString();
     }
-    mCommandMem.setKey("erGUI_signal");
+
     InitializePresets();
     ApplyToneMapper();
     QApplication::setStyle(QStyleFactory::create("Fusion"));
@@ -111,8 +771,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-    mRenderProcess.kill();
-    mRenderProcess.waitForFinished();
+    mRenderProcess.stop_render();
     delete ui;
 }
 
@@ -165,7 +824,6 @@ void MainWindow::EnablePanorama(bool value)
 
 void MainWindow::SafeClose()
 {
-    //if (NeedCancelAction()) return;
     while(!mQueue.empty()) mQueue.pop();
     mFilesInQueue.clear();
     close();
@@ -272,7 +930,22 @@ void UpdateThumbnail(QListWidget* lstFiles, QString& key, QCustomLabel* imgViewe
         }
 }
 
-void MainWindow::RenderThreadFinished(int , QProcess::ExitStatus)
+void MainWindow::UpdateRenderProgress(int value)
+{
+	mpgsRender.setValue(value);
+}
+
+void MainWindow::UpdateRenderImage(int width, int height, float *data)
+{
+	ui->imageViewer->SetRawData(width, height, data);
+}
+
+void MainWindow::RefreshRenderWindow()
+{
+	ui->imageViewer->Refresh();
+}
+
+void MainWindow::onRenderFinished()
 {
     mSharedMemTimer.stop();
     UpdateThumbnail(ui->lstFiles, mCurrentScene, ui->imageViewer, true);
@@ -297,14 +970,6 @@ void MainWindow::RenderThreadFinished(int , QProcess::ExitStatus)
     RenderNext();
 }
 
-void MainWindow::ReadFromClient()
-{
-    QString consoleOut(mRenderProcess.readAllStandardOutput());
-    if (consoleOut.isEmpty()) return;
-    ui->txtConsole->setPlainText(ui->txtConsole->toPlainText() + consoleOut);
-    ui->txtConsole->moveCursor(QTextCursor::End);
-}
-
 void MainWindow::onImageScaleChanged(float value)
 {
     mScaleText.setText(tr("Image Scale: ") + QString::number((int)(value * 100)) + "%  ");
@@ -312,27 +977,7 @@ void MainWindow::onImageScaleChanged(float value)
 
 void MainWindow::onSharedMemTimer()
 {
-    mSharedMem.setKey("erConsole_data");
-    if (!mSharedMem.attach()) return;
-    mSharedMem.lock();
-    unsigned char* rawData = (unsigned char*)mSharedMem.data();
-    size_t width = *(size_t*)rawData;
-    rawData += sizeof(size_t);
-    size_t height = *(size_t*)rawData;
-    rawData += sizeof(size_t);
-    size_t percent = *(size_t*)rawData;
-    mpgsRender.setValue((int)percent);
-    rawData += sizeof(size_t);
-    if (0 == width || 0 == height)
-    {
-        mSharedMem.unlock();
-        mSharedMem.detach();
-        return;
-    }
-    ui->imageViewer->SetRawData((int)width, (int)height, (float*)rawData);
-    mSharedMem.unlock();
-    mSharedMem.detach();
-    ui->imageViewer->Refresh();
+	mRenderProcess.update_render_view(this);
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *e)
@@ -368,8 +1013,14 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
 
 void MainWindow::RenderNext()
 {
-    if (mCurrentScene != "") return;
-    if (mQueue.empty()) return;
+    if (mCurrentScene != "")
+	{
+		return;
+	}
+    if (mQueue.empty())
+	{
+		return;
+	}
     QString nextFile = mQueue.front();
     mQueue.pop();
     mFilesInQueue.erase(nextFile);
@@ -385,37 +1036,17 @@ void MainWindow::RenderNext()
         QFile::remove(sceneResultPath + "/temp.erc");
     }
     mCurrentScene = nextFile;
-    QString cmd = mErConsolePath;
-    cmd += " \"" + nextFile + "\"";
-    cmd += " -sharemem";
 
-	if (!mCode1.isEmpty() && !mCode2.isEmpty() && !mLicense.isEmpty())
-	{
-		cmd += " -license";
-		cmd += " " + mCode1;
-		cmd += " " + mCode2;
-		cmd += " " + mLicense;
-	}	
+	const char *image_filename = "temp.png";
+	bool use_filter = ui->chkEnableFilter->isChecked();
+	bool use_gamma = false; // Assume gamma added by exposure control
+	bool use_exposure = false; // We do exposure control in realtime by ourselves
 
-    cmd += " -output color color ";
-    cmd += ui->chkEnableFilter->isChecked() ? "on " : "off ";
-	if (ui->imageViewer->IsToneEnabled())
-	{
-		cmd += "off "; // Gamma must be added after exposure control
-	}
-	else
+	if (!ui->imageViewer->IsToneEnabled())
 	{
 		// Exposure control is off, do gamma by ourselves
-		cmd += (ui->chkEnableGamma->isChecked()) ? "on " : "off ";
+		use_gamma = ui->chkEnableGamma->isChecked();
 	}
-    cmd += "off "; // Exposure control is post effect. Ignore here.
-    cmd += "temp.png";
-    cmd += PresetToString();
-
-    if (!mTexturePath.isEmpty())
-    {
-        cmd += " -texture_searchpath \"" + mTexturePath + "\"";
-    }
 
     if (ui->lstFiles->currentItem()->data(Qt::UserRole).toString() == nextFile)
     {
@@ -424,9 +1055,101 @@ void MainWindow::RenderNext()
     }
     ui->txtConsole->setText("");
     ui->imageViewer->Reset();
-    mRenderProcess.setProcessChannelMode(QProcess::MergedChannels);
-    mRenderProcess.start(cmd, QIODevice::ReadOnly | QIODevice::Unbuffered);
-    qDebug() << cmd;
+
+	QTreeWidgetItem* pCurItem = ui->tvPreset->currentItem();
+    if (pCurItem)
+    {
+        on_tvPreset_currentItemChanged(nullptr, pCurItem);
+    }
+	QString options_params;
+    QString camera_params;
+    bool usePresetCam = ui->actionSimple_Style->isChecked();
+    bool progressiveAdded = false;
+    for (int i = 0; i < ui->tvPreset->topLevelItemCount(); ++i)
+    {
+        QTreeWidgetItem *pGroupItem = ui->tvPreset->topLevelItem(i);
+		if (pGroupItem->text(0) == "options")
+		{
+			options_params += " -" + pGroupItem->text(0) + " \"";
+			for (int childIdx = 0; childIdx < pGroupItem->childCount(); ++childIdx)
+			{
+				QTreeWidgetItem *pChildItem = pGroupItem->child(childIdx);
+				options_params += pChildItem->text(0) + "=" + pChildItem->text(1) +";";
+			}
+			if (!progressiveAdded)
+			{
+				options_params += "progressive=";
+				options_params += ui->smpProgressive->isChecked() ? "on;" : "off;";
+				progressiveAdded = true;
+			}
+			options_params += "\"";
+		}
+		else if (pGroupItem->text(0) == "camera")
+		{
+			if (usePresetCam)
+			{
+				continue;
+			}
+
+			camera_params += " -" + pGroupItem->text(0) + " \"";
+			for (int childIdx = 0; childIdx < pGroupItem->childCount(); ++childIdx)
+			{
+				QTreeWidgetItem *pChildItem = pGroupItem->child(childIdx);
+				camera_params += pChildItem->text(0) + "=" + pChildItem->text(1) +";";
+			}
+			camera_params += "\"";
+		}
+		else
+		{
+			EI_ASSERT(0);
+		}
+    }
+    bool usePano = false;
+    if (usePresetCam)
+    {
+        QString preStr = ui->smpResolution->currentText();
+        int x = -1;
+        int y = -1;
+        if (preStr.contains(':'))
+        {
+            usePano = true;
+            preStr = preStr.split(": ")[1];
+            y = preStr.toInt();
+            x = y * 6;
+        }
+        else
+        {
+            QStringList strRes = preStr.split(" x ");
+            x = strRes[0].toInt();
+            y = strRes[1].toInt();
+        }
+
+        camera_params += " -camera \"res_x=" + QString::number(x) + ";res_y=" + QString::number(y) + ";\"";
+    }
+    else if (ui->chkPanorama->isChecked())
+    {
+        usePano = true;
+    }
+
+	mRenderProcess.start_render(
+		// ESS file to render
+		nextFile.toUtf8().data(), 
+		// License parameters
+		mCode1.toUtf8().data(), 
+		mCode2.toUtf8().data(), 
+		mLicense.toUtf8().data(), 
+		// Configurations
+		mTexturePath.toUtf8().data(), 
+		// Output parameters
+		image_filename, 
+		use_filter, 
+		use_gamma, 
+		use_exposure, 
+		// Options parameters
+		options_params.toUtf8().data(), 
+		// Camera parameters
+		camera_params.toUtf8().data(), 
+		usePano);
     mSharedMemTimer.start();
     mpgsRender.setValue(0);
     mpgsRender.setVisible(true);
@@ -471,20 +1194,7 @@ bool MainWindow::CancelJob()
     QString fileToRender = ui->lstFiles->currentItem()->data(Qt::UserRole).toString();
     if (mCurrentScene == fileToRender) //Cancel current job
     {
-        if (mCommandMem.attach())
-        {
-            mCommandMem.lock();
-            GUICommand* guiCmd = (GUICommand*)mCommandMem.data();
-            guiCmd->cmd = 1;
-            mCommandMem.unlock();
-            mCommandMem.detach();
-        }
-        else
-        {
-            mRenderProcess.kill();
-        }
-
-        mRenderProcess.waitForFinished();
+        mRenderProcess.stop_render();
         ui->btnRender->setText(tr("Render"));
         ui->smpRender->setText(tr("Render"));
         return true;
@@ -524,71 +1234,6 @@ void MainWindow::InitializePresets()
         ui->cmbPreset->addItem(it->baseName());
         ui->smpPreset->addItem(it->baseName());
     }
-}
-
-QString MainWindow::PresetToString()
-{
-    QTreeWidgetItem* pCurItem = ui->tvPreset->currentItem();
-    if (pCurItem)
-    {
-        on_tvPreset_currentItemChanged(nullptr, pCurItem);
-    }
-    QString outString;
-    bool usePresetCam = ui->actionSimple_Style->isChecked();
-    bool progressiveAdded = false;
-    for (int i = 0; i < ui->tvPreset->topLevelItemCount(); ++i)
-    {
-        QTreeWidgetItem* pGroupItem = ui->tvPreset->topLevelItem(i);
-        if (pGroupItem->text(0) == "camera"
-            && usePresetCam)
-        {
-            continue;
-        }
-        outString += " -" + pGroupItem->text(0) + " \"";
-        for (int childIdx = 0; childIdx < pGroupItem->childCount(); ++childIdx)
-        {
-            QTreeWidgetItem* pChildItem = pGroupItem->child(childIdx);
-            outString += pChildItem->text(0) + "=" + pChildItem->text(1) +";";
-        }
-        if (!progressiveAdded && pGroupItem->text(0) == "options")
-        {
-            outString += "progressive=";
-            outString += ui->smpProgressive->isChecked() ? "on;" : "off;";
-            progressiveAdded = true;
-        }
-        outString += "\"";
-    }
-    bool usePano = false;
-    if (usePresetCam)
-    {
-        QString preStr = ui->smpResolution->currentText();
-        int x = -1;
-        int y = -1;
-        if (preStr.contains(':'))
-        {
-            usePano = true;
-            preStr = preStr.split(": ")[1];
-            y = preStr.toInt();
-            x = y * 6;
-        }
-        else
-        {
-            QStringList strRes = preStr.split(" x ");
-            x = strRes[0].toInt();
-            y = strRes[1].toInt();
-        }
-
-        outString += " -camera \"res_x=" + QString::number(x) + ";res_y=" + QString::number(y) + ";\"";
-    }
-    else if (ui->chkPanorama->isChecked())
-    {
-        usePano = true;
-    }
-    if (usePano)
-    {
-        outString += " -lens cubemap_camera off 0.0";
-    }
-    return outString;
 }
 
 void MainWindow::onActionDeleteFile_triggered()

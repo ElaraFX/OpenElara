@@ -55,7 +55,6 @@ protected:
     void paintEvent(QPaintEvent *) override;
 
 private:
-    QSharedMemory mCommandMem;
     int mWidth;
     int mHeight;
     bool mbDirty;

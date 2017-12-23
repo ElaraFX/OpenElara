@@ -21,7 +21,6 @@ QCustomLabel::QCustomLabel(QWidget *parent, Qt::WindowFlags f)
     , mpColorMap(nullptr)
     , mpAlphaMap(nullptr)
 {
-    mCommandMem.setKey("erGUI_signal");
 }
 
 QCustomLabel::QCustomLabel(const QString &text, QWidget *parent, Qt::WindowFlags f)
@@ -29,7 +28,6 @@ QCustomLabel::QCustomLabel(const QString &text, QWidget *parent, Qt::WindowFlags
     , mpColorMap(nullptr)
     , mpAlphaMap(nullptr)
 {
-    mCommandMem.setKey("erGUI_signal");
 }
 
 QCustomLabel::~QCustomLabel()
