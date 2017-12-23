@@ -186,6 +186,54 @@ void SetParameters(
 	}	
 }
 
+QAtomicInt g_logDirty;
+QMutex g_logMutex;
+QString g_logMsg;
+
+static void verbose_callback(eiInt level, const char *format, va_list args)
+{
+	QString localMsg;
+
+	switch (level)
+	{
+	case EI_VERBOSE_FATAL:
+		{
+			localMsg = "FATAL> ";
+		}
+		break;
+	case EI_VERBOSE_ERROR:
+		{
+			localMsg = "ERROR> ";
+		}
+		break;
+	case EI_VERBOSE_WARNING:
+		{
+			localMsg = "WARNING> ";
+		}
+		break;
+	case EI_VERBOSE_INFO:
+		{
+			localMsg = "INFO> ";
+		}
+		break;
+	case EI_VERBOSE_DEBUG:
+	default:
+		{
+			localMsg = "DEBUG> ";
+		}
+		break;
+	}
+
+	localMsg += QString::vasprintf(format, args);
+
+	g_logMutex.lock();
+	{
+		g_logMsg += localMsg;
+		g_logDirty = EI_TRUE;
+	}
+	g_logMutex.unlock();
+}
+
 // Render process management
 RenderProcess::RenderProcess()
 {
@@ -229,6 +277,9 @@ void RenderProcess::start_render(
 
 	// New rendering context
 	ei_context();
+
+	// Redirect logs to text edit
+	ei_verbose_set_callback(verbose_callback);
 
 	// Set dongle license if available
 	has_license = EI_FALSE;
@@ -494,6 +545,7 @@ void RenderProcess::update_render_view(MainWindow *mainWindow)
 		bool bufferUpdated = false;
 		ei_write_lock(bufferLock);
 		{
+			// Check again in locking scope
 			if (ei_atomic_read(&bufferDirty))
 			{
 				mainWindow->UpdateRenderImage(imageWidth, imageHeight, (float *)rawData);
@@ -978,6 +1030,35 @@ void MainWindow::onImageScaleChanged(float value)
 void MainWindow::onSharedMemTimer()
 {
 	mRenderProcess.update_render_view(this);
+
+	// Qt only allows updating UI in main thread, so 
+	// we have to use this complicated buffering
+	if (g_logDirty.load())
+	{
+		QString msgToAppend;
+
+		g_logMutex.lock();
+		{
+			// Check again in locking scope
+			if (g_logDirty.load())
+			{
+				if (!g_logMsg.isEmpty())
+				{
+					msgToAppend = g_logMsg;
+					g_logMsg.clear();
+				}
+				g_logDirty = EI_FALSE;
+			}
+		}
+		g_logMutex.unlock();
+
+		if (!msgToAppend.isEmpty())
+		{
+			// Must use append function here, which seems 
+			// to be faster than setPlainText and moveCursor
+			ui->txtConsole->append(msgToAppend);
+		}
+	}
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *e)

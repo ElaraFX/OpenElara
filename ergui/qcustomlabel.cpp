@@ -188,7 +188,7 @@ void QCustomLabel::Refresh()
         }
     }
 
-    //Process alpha
+    // Process alpha
     if (nullptr == mpAlphaMap
             || mpAlphaMap->width() != mWidth
             || mpAlphaMap->height() != mHeight)
