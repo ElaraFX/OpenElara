@@ -344,11 +344,6 @@
         <translation>    缩放比例:  </translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="221"/>
-        <source>Elara Renderer</source>
-        <translation>Elara渲染器</translation>
-    </message>
-    <message>
         <source>Last render time: </source>
         <translation type="vanished">上次渲染时间:</translation>
     </message>

@@ -1,3 +1,19 @@
+/**************************************************************************
+ * Copyright (C) 2017 Rendease Co., Ltd.
+ * All rights reserved.
+ *
+ * This program is commercial software: you must not redistribute it 
+ * and/or modify it without written permission from Rendease Co., Ltd.
+ *
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+ * End User License Agreement for more details.
+ *
+ * You should have received a copy of the End User License Agreement along 
+ * with this program.  If not, see <http://www.rendease.com/licensing/>
+ *************************************************************************/
+
 #include "mainwindow.h"
 #include <QApplication>
 #include <QCommandLineParser>
@@ -49,7 +65,7 @@ int main(int argc, char *argv[])
     QCommandLineParser cmdParser;
     cmdParser.addHelpOption();
     cmdParser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
-    cmdParser.setApplicationDescription(QApplication::tr("This is Elara renderer"));
+    cmdParser.setApplicationDescription(QApplication::tr("Elara Renderer GUI"));
     cmdParser.addPositionalArgument(QApplication::tr("[file1] [file2]"), QApplication::tr("ESS files to render."));
 
     QCommandLineOption optPreset(QStringList() << "p" << "preset", QCoreApplication::translate("main", "Specify render preset"), "None");
