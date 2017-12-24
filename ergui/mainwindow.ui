@@ -28,7 +28,7 @@
    <bool>true</bool>
   </property>
   <property name="windowTitle">
-   <string>Elara Render</string>
+   <string>Elara Renderer</string>
   </property>
   <property name="windowIcon">
    <iconset resource="resource.qrc">
