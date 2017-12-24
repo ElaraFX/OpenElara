@@ -1006,6 +1006,7 @@ void MainWindow::RefreshRenderWindow()
 void MainWindow::onRenderFinished()
 {
     mSharedMemTimer.stop();
+	FlushRenderLog();
     UpdateThumbnail(ui->lstFiles, mCurrentScene, ui->imageViewer, true);
     if (ui->lstFiles->currentItem()->data(Qt::UserRole).toString() == mCurrentScene)
     {
@@ -1033,10 +1034,8 @@ void MainWindow::onImageScaleChanged(float value)
     mScaleText.setText(tr("Image Scale: ") + QString::number((int)(value * 100)) + "%  ");
 }
 
-void MainWindow::onSharedMemTimer()
+void MainWindow::FlushRenderLog()
 {
-	mRenderProcess.update_render(this);
-
 	// Qt only allows updating UI in main thread, so 
 	// we have to use this complicated buffering
 	if (g_logDirty.load())
@@ -1065,6 +1064,13 @@ void MainWindow::onSharedMemTimer()
 			ui->txtConsole->append(msgToAppend);
 		}
 	}
+}
+
+void MainWindow::onSharedMemTimer()
+{
+	mRenderProcess.update_render(this);
+
+	FlushRenderLog();
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *e)
@@ -1283,6 +1289,7 @@ bool MainWindow::CancelJob()
     {
         mRenderProcess.stop_render();
 		mRenderProcess.update_render_view(this);
+		FlushRenderLog();
 
         ui->btnRender->setText(tr("Render"));
         ui->smpRender->setText(tr("Render"));

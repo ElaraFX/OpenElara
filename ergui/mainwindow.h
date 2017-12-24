@@ -97,6 +97,7 @@ public:
 	void UpdateRenderImage(int width, int height, float *data);
 	void RefreshRenderWindow();
 	void onRenderFinished();
+	void FlushRenderLog();
 
 private slots:
     void SafeClose();
