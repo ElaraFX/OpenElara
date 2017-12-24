@@ -2,7 +2,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "optiondialog.h"
-#include "ergui_buildnum.h"
 #include <QFileDialog>
 #include <QDebug>
 #include <QDrag>
