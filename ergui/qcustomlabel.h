@@ -13,15 +13,6 @@ enum RenderLayer
     RenderLayer_Alpha
 };
 
-struct GUICommand
-{
-    unsigned int cmd; //0 means mouse command, 1 means cancel render
-    int mouseX;
-    int mouseY;
-    unsigned int mouseBtn;
-    unsigned int modifierKey;
-};
-
 class QCustomLabel : public QLabel
 {
     Q_OBJECT

@@ -516,25 +516,6 @@ void RenderProcess::stop_render()
 
 void RenderProcess::update_render_view(MainWindow *mainWindow)
 {
-	if (!ei_job_aborted())
-	{
-		// Rendering, update job progress
-		const eiScalar job_percent = (eiScalar)ei_job_get_percent();
-		if (absf(last_job_percent - job_percent) >= 0.5f)
-		{
-			mainWindow->UpdateRenderProgress((int)(job_percent * 100.0f));
-
-			last_job_percent = job_percent;
-		}
-	}
-	else
-	{
-		// Not rendering, try to abort and cleanup
-		stop_render();
-
-		mainWindow->onRenderFinished();
-	}
-	
 	// Update render image if buffer is dirty
 	if (ei_atomic_read(&bufferDirty))
 	{
@@ -559,6 +540,31 @@ void RenderProcess::update_render_view(MainWindow *mainWindow)
 		{
 			mainWindow->RefreshRenderWindow();
 		}
+	}
+}
+
+void RenderProcess::update_render(MainWindow *mainWindow)
+{
+	if (!ei_job_aborted())
+	{
+		// Rendering, update job progress
+		const eiScalar job_percent = (eiScalar)ei_job_get_percent();
+		if (absf(last_job_percent - job_percent) >= 0.5f)
+		{
+			mainWindow->UpdateRenderProgress((int)(job_percent * 100.0f));
+
+			last_job_percent = job_percent;
+		}
+
+		update_render_view(mainWindow);
+	}
+	else
+	{
+		// Not rendering, try to abort and cleanup
+		stop_render();
+		update_render_view(mainWindow);
+
+		mainWindow->onRenderFinished();
 	}
 }
 
@@ -1029,7 +1035,7 @@ void MainWindow::onImageScaleChanged(float value)
 
 void MainWindow::onSharedMemTimer()
 {
-	mRenderProcess.update_render_view(this);
+	mRenderProcess.update_render(this);
 
 	// Qt only allows updating UI in main thread, so 
 	// we have to use this complicated buffering
@@ -1276,6 +1282,8 @@ bool MainWindow::CancelJob()
     if (mCurrentScene == fileToRender) //Cancel current job
     {
         mRenderProcess.stop_render();
+		mRenderProcess.update_render_view(this);
+
         ui->btnRender->setText(tr("Render"));
         ui->smpRender->setText(tr("Render"));
         return true;

@@ -72,6 +72,7 @@ struct RenderProcess
 		bool use_panorama);
 	void stop_render();
 	void update_render_view(MainWindow *mainWindow);
+	void update_render(MainWindow *mainWindow);
 };
 
 class MainWindow : public QMainWindow
