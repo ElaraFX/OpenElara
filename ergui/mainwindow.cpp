@@ -1163,7 +1163,6 @@ void MainWindow::RenderNext()
         QTreeWidgetItem *pGroupItem = ui->tvPreset->topLevelItem(i);
 		if (pGroupItem->text(0) == "options")
 		{
-			options_params += " -" + pGroupItem->text(0) + " \"";
 			for (int childIdx = 0; childIdx < pGroupItem->childCount(); ++childIdx)
 			{
 				QTreeWidgetItem *pChildItem = pGroupItem->child(childIdx);
@@ -1175,7 +1174,6 @@ void MainWindow::RenderNext()
 				options_params += ui->smpProgressive->isChecked() ? "on;" : "off;";
 				progressiveAdded = true;
 			}
-			options_params += "\"";
 		}
 		else if (pGroupItem->text(0) == "camera")
 		{
@@ -1184,13 +1182,11 @@ void MainWindow::RenderNext()
 				continue;
 			}
 
-			camera_params += " -" + pGroupItem->text(0) + " \"";
 			for (int childIdx = 0; childIdx < pGroupItem->childCount(); ++childIdx)
 			{
 				QTreeWidgetItem *pChildItem = pGroupItem->child(childIdx);
 				camera_params += pChildItem->text(0) + "=" + pChildItem->text(1) +";";
 			}
-			camera_params += "\"";
 		}
 		else
 		{
@@ -1217,7 +1213,7 @@ void MainWindow::RenderNext()
             y = strRes[1].toInt();
         }
 
-        camera_params += " -camera \"res_x=" + QString::number(x) + ";res_y=" + QString::number(y) + ";\"";
+        camera_params += "res_x=" + QString::number(x) + ";res_y=" + QString::number(y) + ";";
     }
     else if (ui->chkPanorama->isChecked())
     {
@@ -1822,26 +1818,41 @@ void MainWindow::SetLayout(int layout)
 
 void MainWindow::on_tvPreset_itemDoubleClicked(QTreeWidgetItem *item, int)
 {
-    if (item->text(1).compare("off", Qt::CaseInsensitive) == 0
-            || item->text(1).compare("fast", Qt::CaseInsensitive) == 0
-			|| item->text(1).compare("accurate", Qt::CaseInsensitive) == 0)
-    {
-        QComboBox* boolCombo = new QComboBox(ui->tvPreset);
-		boolCombo->addItems(QStringList() << "off"
+	if (item->text(0).compare("GI_cache_preview", Qt::CaseInsensitive) == 0)
+	{
+		QComboBox* enumCombo = new QComboBox(ui->tvPreset);
+		enumCombo->addItems(QStringList() << "off"
                              << "fast"
                              << "accurate");
 
 		 if (item->text(1).compare("off", Qt::CaseInsensitive) == 0)
         {
-            boolCombo->setCurrentIndex(0);
+            enumCombo->setCurrentIndex(0);
         }
         else if (item->text(1).compare("fast", Qt::CaseInsensitive) == 0)
         {
-            boolCombo->setCurrentIndex(1);
+            enumCombo->setCurrentIndex(1);
         }
         else if (item->text(1).compare("accurate", Qt::CaseInsensitive) == 0)
         {
-            boolCombo->setCurrentIndex(2);
+            enumCombo->setCurrentIndex(2);
+        }
+        ui->tvPreset->setItemWidget(item, 1, enumCombo);
+	}
+	else if (item->text(1).compare("off", Qt::CaseInsensitive) == 0 || 
+		item->text(1).compare("on", Qt::CaseInsensitive) == 0)
+    {
+        QComboBox* boolCombo = new QComboBox(ui->tvPreset);
+		boolCombo->addItems(QStringList() << "off"
+                             << "on");
+
+		 if (item->text(1).compare("off", Qt::CaseInsensitive) == 0)
+        {
+            boolCombo->setCurrentIndex(0);
+        }
+        else if (item->text(1).compare("on", Qt::CaseInsensitive) == 0)
+        {
+            boolCombo->setCurrentIndex(1);
         }
         ui->tvPreset->setItemWidget(item, 1, boolCombo);
     }
