@@ -652,6 +652,18 @@ void convert_native_arguments(int argc, const char *argv[])
 #endif
 }
 
+static void print_ref_callback(const char *ref_filename)
+{
+	if (ref_filename != NULL && strlen(ref_filename) > 0)
+	{
+		printf("%s\n", ref_filename);
+	}
+	else
+	{
+		ei_error("Invalid file reference.\n");
+	}
+}
+
 int main_body(int argc, char *argv[])
 {
 	convert_native_arguments(argc, (const char **)argv);
@@ -708,6 +720,14 @@ int main_body(int argc, char *argv[])
 	{
 		ei_context();
 		ei_print_node_info(argv[1]);
+		ei_end_context();
+	}
+	else if (argc == 2 && strcmp(argv[0], "-list_refs") == 0)
+	{
+		ei_context();
+		ei_verbose("warning");
+		printf("\nFile references:\n\n");
+		ei_get_ess_file_refs(argv[1], print_ref_callback);
 		ei_end_context();
 	}
 	else
