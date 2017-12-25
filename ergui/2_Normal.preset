@@ -1,7 +1,7 @@
 [options]
 min_samples=-3
 max_samples=16
-diffuse_samples=8
+diffuse_samples=4
 sss_samples=16
 volume_indirect_samples=8
 light_cutoff=0.01
