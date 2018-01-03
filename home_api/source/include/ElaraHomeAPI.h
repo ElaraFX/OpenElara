@@ -218,6 +218,11 @@ struct EH_CustomRenderOptions
 	}
 };
 
+/** Set options name.
+ *  Please use it before set_render_options
+ */
+EH_API void EH_set_options_name(EH_Context *ctx, std::string &opt_name);
+
 /** Set current render options.
  */
 EH_API void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt);

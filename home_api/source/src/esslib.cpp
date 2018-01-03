@@ -153,10 +153,13 @@ inline bool CheckVec3Big(eiVector &val)
 #define ER_GEO_TRANS_EPS		0.00001f
 #define ER_TRIANGLE_AREA_EPS	0.000001f
 
-const char* AddDefaultOptions(EssWriter& writer)
+void AddDefaultOptions(EssWriter& writer, std::string &opt_name)
 {
-	static const char* optName = "GlobalOptionsName";
-	writer.BeginNode("options", optName);
+	if (opt_name.size() == 0)
+	{
+		opt_name = "GlobalOptionsName";
+	}
+	writer.BeginNode("options", opt_name.c_str());
 	writer.AddInt("min_samples", -3);
 	writer.AddInt("max_samples", 16);
 	writer.AddInt("diffuse_samples", 8);
@@ -185,13 +188,15 @@ const char* AddDefaultOptions(EssWriter& writer)
 	writer.AddScaler("GI_cache_radius", 0.0f);
 	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
-	return optName;
 }
 
-const char* AddMediumOptions(EssWriter &writer)
+void AddMediumOptions(EssWriter &writer, std::string &opt_name)
 {
-	static const char* optName = "GlobalMediumOption";
-	writer.BeginNode("options", optName);
+	if (opt_name.size() == 0)
+	{
+		opt_name = "GlobalMediumOption";
+	}
+	writer.BeginNode("options", opt_name.c_str());
 	writer.AddInt("min_samples", -3);
 	writer.AddInt("max_samples", 16);
 	writer.AddInt("diffuse_samples", 4);
@@ -220,13 +225,15 @@ const char* AddMediumOptions(EssWriter &writer)
 	writer.AddScaler("GI_cache_radius", 0.0f);
 	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
-	return optName;
 }
 
-const char* AddLowOptions(EssWriter &writer)
+void AddLowOptions(EssWriter &writer, std::string &opt_name)
 {
-	static const char* optName = "GlobalLowOption";
-	writer.BeginNode("options", optName);
+	if (opt_name.size() == 0)
+	{
+		opt_name = "GlobalLowOption";
+	}
+	writer.BeginNode("options", opt_name.c_str());
 	writer.AddInt("min_samples", -3);
 	writer.AddInt("max_samples", 4);
 	writer.AddInt("diffuse_samples", 4);
@@ -255,13 +262,15 @@ const char* AddLowOptions(EssWriter &writer)
 	writer.AddScaler("GI_cache_radius", 0.0f);
 	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
-	return optName;
 }
 
-const char* AddHighOptions(EssWriter &writer)
+void AddHighOptions(EssWriter &writer, std::string &opt_name)
 {
-	static const char* optName = "GlobalHighOption";
-	writer.BeginNode("options", optName);
+	if (opt_name.size() == 0)
+	{
+		opt_name = "GlobalHighOption";
+	}
+	writer.BeginNode("options", opt_name.c_str());
 	writer.AddInt("min_samples", -3);
 	writer.AddInt("max_samples", 36);
 	writer.AddInt("diffuse_samples", 8);
@@ -290,13 +299,15 @@ const char* AddHighOptions(EssWriter &writer)
 	writer.AddScaler("GI_cache_radius", 0.0f);
 	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
-	return optName;
 }
 
-const char* AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &option)
+void AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &option, std::string &opt_name)
 {
-	static const char* optName = "GlobalHighOption";
-	writer.BeginNode("options", optName);
+	if (opt_name.size() == 0)
+	{
+		opt_name = "GlobalHighOption";
+	}
+	writer.BeginNode("options", opt_name.c_str());
 	writer.AddInt("min_samples", -3);
 	writer.AddInt("max_samples", option.sampler_AA);
 	writer.AddInt("diffuse_samples", option.diffuse_sample_num);
@@ -325,7 +336,6 @@ const char* AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &op
 	writer.AddScaler("GI_cache_radius", 0.0f);
 	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
-	return optName;
 }
 
 std::string AddDefaultWallMaterial(EssWriter& writer, const bool check_normal)
@@ -520,7 +530,8 @@ EssExporter::EssExporter(void) :
 	log_callback(NULL),
 	mIsLeftHand(false),
 	mUseDisplacement(false),
-	mIsNeedEmitGI(true)
+	mIsNeedEmitGI(true),
+	mOptionName(std::string(""))
 {
 	mLightSamples = 16;
 }
@@ -1065,7 +1076,7 @@ bool EssExporter::AddDefaultMaterial()
 
 void EssExporter::AddCustomOption(const EH_CustomRenderOptions &option)
 {
-	mOptionName = AddCustomOptions(mWriter, option);
+	AddCustomOptions(mWriter, option, mOptionName);
 }
 
 bool EssExporter::AddBackground(const std::string &hdri_name, const float rotation, const float hdri_intensity, bool enable_emit_GI)
@@ -1118,24 +1129,29 @@ bool EssExporter::AddMaterial(const EH_Material& mat, std::string &matName)
 	}
 }
 
+void EssExporter::SetOptionName(std::string &name)
+{
+	mOptionName = name;
+}
+
 void EssExporter::AddMediumOption()
 {
-	mOptionName = AddMediumOptions(mWriter);
+	AddMediumOptions(mWriter, mOptionName);
 }
 
 void EssExporter::AddDefaultOption()
 {
-	mOptionName = AddDefaultOptions(mWriter);
+	AddDefaultOptions(mWriter, mOptionName);
 }
 
 void EssExporter::AddLowOption()
 {
-	mOptionName = AddLowOptions(mWriter);
+	AddLowOptions(mWriter, mOptionName);
 }
 
 void EssExporter::AddHighOption()
 {
-	mOptionName = AddHighOptions(mWriter);
+	AddHighOptions(mWriter, mOptionName);
 }
 
 void EssExporter::SetExposure(const EH_Exposure &exposure)
@@ -1255,7 +1271,11 @@ void EssExporter::AddMeshInstance(const char *instName, const EH_MeshInstance &m
 void EssExporter::EndExport()
 {
 	printf("EndExport\n");
-	const char* optName = mOptionName.empty() ? AddMediumOptions(mWriter) : mOptionName.c_str();
+	if (mOptionName.empty())
+	{
+		AddMediumOptions(mWriter, mOptionName);
+	}
+	const char* optName = mOptionName.c_str();
 
 	if (mUseDisplacement)
 	{

@@ -399,6 +399,11 @@ void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt)
 	}
 }
 
+void EH_set_options_name(EH_Context *ctx, std::string &opt_name)
+{
+	reinterpret_cast<EssExporter*>(ctx)->SetOptionName(opt_name);
+}
+
 void EH_set_custom_render_options(EH_Context *ctx, const EH_CustomRenderOptions *opt)
 {
 	reinterpret_cast<EssExporter*>(ctx)->AddCustomOption(*opt);
