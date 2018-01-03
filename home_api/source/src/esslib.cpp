@@ -21,7 +21,7 @@
 #include <ei.h>
 
 const char* instanceExt = "_instance";
-const char* MAX_EXPORT_ESS_DEFAULT_INST_NAME = "GlobalInstGroupName";
+const char* MAX_EXPORT_ESS_DEFAULT_INST_NAME = "mtoer_instgroup_00";
 const char* g_inst_group_name = "GlobalInstGroupName";
 
 //left hand to right hand matrix
