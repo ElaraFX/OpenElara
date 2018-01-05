@@ -53,6 +53,10 @@ std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& 
 
 	//Declare camera
 	std::string itemID = NodeName;
+	if (NodeName.size() == 0)
+	{
+		itemID = "GlobalCameraName";
+	}
 	writer.BeginNode("camera", itemID);
 
 	if (!cubemap_len_str.empty())
@@ -86,10 +90,13 @@ std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& 
 
 	//Add camera instance
 	std::string instanceName = "inst_";
-	instanceName += NodeName;
-	if (instanceName.size() == 0)
+	if (NodeName.size() == 0)
 	{
 		instanceName = "GlobalCameraInstanceName";
+	}
+	else
+	{
+		instanceName += NodeName;
 	}
 	writer.BeginNode("instance", instanceName);
 	writer.AddRef("element",itemID);
