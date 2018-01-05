@@ -33,7 +33,7 @@ bool g_gi_cache_show_samples = false;
 std::string AddTexture(EssWriter& writer, const std::string texPath, const float repeat_u, float repeat_v, const std::string texName, const std::string rootPath);
 std::string AddNormalBump(EssWriter& writer, const std::string &normalMap);
 
-std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& envName, bool panorama, int panorama_size, bool is_lefthand)
+std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& NodeName, std::string& envName, bool panorama, int panorama_size, bool is_lefthand)
 {	
 	std::string cubemap_len_str;
 	if (cam.cubemap_render)
@@ -52,7 +52,7 @@ std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& 
 	}
 
 	//Declare camera
-	std::string itemID = "Camera_";
+	std::string itemID = NodeName;
 	writer.BeginNode("camera", itemID);
 
 	if (!cubemap_len_str.empty())
@@ -85,8 +85,12 @@ std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& 
 	writer.EndNode();
 
 	//Add camera instance
-	//std::string instanceName = itemID + instanceExt;
-	std::string instanceName("GlobalCameraInstanceName");
+	std::string instanceName = "inst_";
+	instanceName += NodeName;
+	if (instanceName.size() == 0)
+	{
+		instanceName = "GlobalCameraInstanceName";
+	}
 	writer.BeginNode("instance", instanceName);
 	writer.AddRef("element",itemID);
 	eiMatrix cam_tranmat = *(eiMatrix*)(cam.view_to_world);
@@ -1052,9 +1056,9 @@ inline int ClampToRange(int value, int max)
 	return (int)(100 * (float)value / (float)max);
 }
 
-bool EssExporter::AddCamera(const EH_Camera &cam, bool panorama, int panorama_size) 
+bool EssExporter::AddCamera(const EH_Camera &cam, bool panorama, int panorama_size, std::string &NodeName) 
 {
-	std::string instanceName = AddCameraData(mWriter, cam, mEnvName, panorama, panorama_size, mIsLeftHand);
+	std::string instanceName = AddCameraData(mWriter, cam, NodeName, mEnvName, panorama, panorama_size, mIsLeftHand);
 	mCamName = instanceName;
 	if (instanceName != "")
 	{

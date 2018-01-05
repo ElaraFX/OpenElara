@@ -64,7 +64,7 @@ public:
 	~EssExporter();
 	bool BeginExport(std::string &filename, const EH_ExportOptions &option, const bool check_normal);
 	void SetLightSamples(const int samples);
-	bool AddCamera(const EH_Camera &cam, bool panorama, int panorama_size);
+	bool AddCamera(const EH_Camera &cam, bool panorama, int panorama_size, std::string &NodeName);
 	void AddMesh(const EH_Mesh& model, const std::string &modelName);
 	void AddMeshInstance(const char *instName, const EH_MeshInstance &meshInst);
 	bool AddLight(const EH_Light& light, std::string &lightName, bool is_show_area);
