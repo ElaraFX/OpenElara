@@ -1,0 +1,105 @@
+
+#include <ei_shaderx.h>
+#include <OpenImageIO/imageio.h>
+
+eiBool ei_oiio_load_image(eiTextureShaderParams *params)
+{
+	if (params == NULL || params->filename == NULL)
+	{
+		ei_error("Invalid texture shader parameters\n");
+		return EI_FALSE;
+	}
+
+	/* load the file.
+		we rely on OIIO for this part, because it saves us tons 
+		of time to support all image formats */
+	char resolved_filename[EI_MAX_FILE_NAME_LEN];
+	ei_resolve_texture_name(resolved_filename, params->filename);
+	
+	OIIO::ImageInput *input;
+	try
+	{
+		input = OIIO::ImageInput::open(resolved_filename);
+	}
+	catch (...)
+	{
+		std::string error(OpenImageIO::geterror());
+		ei_error(error.c_str());
+		return EI_FALSE;
+	}
+	
+	if (input == NULL)
+	{
+		ei_error("Failed to create OIIO image input\n");
+		return EI_FALSE;
+	}
+
+	const OIIO::ImageSpec & spec = input->spec();
+	params->xres = spec.width;
+	params->yres = spec.height;
+	params->channels = spec.nchannels;
+	params->is_float = spec.format.is_floating_point();
+
+	if (!params->is_float)
+	{
+		ei_array_resize(
+			&(params->img_data), 
+			sizeof(eiUint8) * params->xres * params->yres * params->channels);
+
+		input->read_image(OIIO::TypeDesc::UINT8, ei_array_data(&(params->img_data)));
+	}
+	else
+	{
+		ei_array_resize(
+			&(params->img_data), 
+			sizeof(eiScalar) * params->xres * params->yres * params->channels);
+
+		input->read_image(OIIO::TypeDesc::FLOAT, ei_array_data(&(params->img_data)));
+	}
+
+	for (size_t i = 0; i < spec.extra_attribs.size(); ++i)
+	{
+		const OIIO::ImageIOParameter & attr = spec.extra_attribs[i];
+			
+		eiTextureAttribute tex_attr;
+			
+		if (attr.type() == OIIO::TypeDesc::TypeString)
+		{
+			tex_attr.type = EI_TYPE_TOKEN;
+			ei_token_set(&(tex_attr.value.as_token), *(const char **)attr.data());
+		}
+		else if (attr.type() == OIIO::TypeDesc::TypeInt)
+		{
+			tex_attr.type = EI_TYPE_INT;
+			tex_attr.value.as_int = *(const int *)attr.data();
+		}
+		else if (attr.type() == OIIO::TypeDesc(OIIO::TypeDesc::UINT))
+		{
+			tex_attr.type = EI_TYPE_INDEX;
+			tex_attr.value.as_index = *(const unsigned int *)attr.data();
+		}
+		else if (attr.type() == OIIO::TypeDesc::TypeFloat)
+		{
+			tex_attr.type = EI_TYPE_SCALAR;
+			tex_attr.value.as_scalar = *(const float *)attr.data();
+		}
+		else
+		{
+			ei_warning(
+				"Unsupported attribute type %s %s found in %s\n", 
+				attr.type().c_str(), 
+				attr.name().c_str(), 
+				params->filename);
+			continue;
+		}
+
+		ei_token_set(&(tex_attr.name), attr.name().c_str());
+
+		ei_array_push_back(&(params->extra_attribs), &tex_attr);
+	}
+
+	input->close();
+	OIIO::ImageInput::destroy(input);
+
+	return EI_TRUE;
+}
