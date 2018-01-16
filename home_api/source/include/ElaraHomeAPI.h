@@ -218,6 +218,10 @@ struct EH_CustomRenderOptions
 	}
 };
 
+/** Set options name.
+ */
+EH_API void EH_set_options_name(EH_Context *ctx, const char *opt_name);
+
 /** Set current render options.
  */
 EH_API void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt);
@@ -301,7 +305,7 @@ struct EH_Camera
 /** Set current camera to render.
  */
 EH_API void EH_set_camera(EH_Context *ctx, const EH_Camera *cam);
-
+EH_API void EH_add_camera(EH_Context *ctx, const EH_Camera *cam, const char *node_name);
 
 
 /** The triangle mesh data for user to fill

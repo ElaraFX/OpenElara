@@ -399,6 +399,11 @@ void EH_set_render_options(EH_Context *ctx, const EH_RenderOptions *opt)
 	}
 }
 
+void EH_set_options_name(EH_Context *ctx, const char *opt_name)
+{
+	reinterpret_cast<EssExporter*>(ctx)->SetOptionName(std::string(opt_name));
+}
+
 void EH_set_custom_render_options(EH_Context *ctx, const EH_CustomRenderOptions *opt)
 {
 	reinterpret_cast<EssExporter*>(ctx)->AddCustomOption(*opt);
@@ -416,7 +421,12 @@ void EH_set_gamma(EH_Context *ctx, const EH_Gamma *gamma)
 
 void EH_set_camera(EH_Context *ctx, const EH_Camera *cam)
 {
-	reinterpret_cast<EssExporter*>(ctx)->AddCamera(*cam, false, 0);
+	reinterpret_cast<EssExporter*>(ctx)->AddCamera(*cam, false, 0, std::string(""));
+}
+
+void EH_add_camera(EH_Context *ctx, const EH_Camera *cam, const char *node_name)
+{
+	reinterpret_cast<EssExporter*>(ctx)->AddCamera(*cam, false, 0, std::string(node_name));
 }
 
 void EH_add_mesh(EH_Context *ctx, const char *name, const EH_Mesh *mesh)
