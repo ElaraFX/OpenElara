@@ -446,8 +446,8 @@ struct LightmapGlobals
 		ei_fixed_pool_init(&node_pool, sizeof(BVHNode), NODE_POOL_BANK_SIZE);
 		ei_pool_init(&triangle_pool);
 
-		char uv_name_idx[EI_MAX_PARAM_NAME_LEN];
-		sprintf(uv_name_idx, "%s_idx", uv_name);
+		std::string uv_name_idx(uv_name);
+		uv_name_idx += "_idx";
 
 		poly_insts.resize(poly_insts_accessor.size());
 		for (eiInt i = 0; i < poly_insts_accessor.size(); ++i)
@@ -459,7 +459,7 @@ struct LightmapGlobals
 			eiTag pos_list_tag = ei_node_get_array(poly_obj.get(), ei_node_find_param(poly_obj.get(), "pos_list"));
 			eiTag tri_list_tag = ei_node_get_array(poly_obj.get(), ei_node_find_param(poly_obj.get(), "triangle_list"));
 			eiTag uv_list_tag = ei_node_get_array(poly_obj.get(), ei_node_find_param(poly_obj.get(), uv_name));
-			eiTag uv_idxs_tag = ei_node_get_array(poly_obj.get(), ei_node_find_param(poly_obj.get(), uv_name_idx));
+			eiTag uv_idxs_tag = ei_node_get_array(poly_obj.get(), ei_node_find_param(poly_obj.get(), uv_name_idx.c_str()));
 			const eiMatrix & transform = (*ei_node_get_matrix(poly_inst.get(), ei_node_find_param(poly_inst.get(), "transform")));
 
 			poly_insts[i].poly_inst_tag = poly_inst_tag;

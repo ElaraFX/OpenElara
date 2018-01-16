@@ -470,7 +470,7 @@ static void display_callback(eiInt frameWidth, eiInt frameHeight, void *param)
 				ei_delete_thread(rp->renderThread);
 				rp->renderThread = NULL;
 
-				ei_render_cleanup();
+				/* don't call ei_render_cleanup here to re-use frame buffers */
 			}
 
 			/* modify options parameters */
@@ -590,7 +590,8 @@ static void display_callback(eiInt frameWidth, eiInt frameHeight, void *param)
 			ei_timer_reset(&(rp->first_pixel_timer));
 			ei_timer_start(&(rp->first_pixel_timer));
 			rp->is_first_pass = EI_TRUE;
-			ei_render_prepare();
+			/* use ei_job_abort instead of ei_render_prepare for interactive rendering */
+			ei_job_abort(EI_FALSE);
 
 			rp->renderThread = ei_create_thread(render_callback, rp->render_params, NULL);
 			ei_set_low_thread_priority(rp->renderThread);
@@ -730,6 +731,14 @@ int main_body(int argc, char *argv[])
 		ei_get_ess_file_refs(argv[1], print_ref_callback);
 		ei_end_context();
 	}
+	else if (argc == 3 && strcmp(argv[0], "-make_package") == 0)
+	{
+		ei_make_package(argv[1], argv[2]);
+	}
+	else if (argc == 3 && strcmp(argv[0], "-extract_package") == 0)
+	{
+		ei_extract_package(argv[1], argv[2]);
+	}
 	else
 	{
 		ei_context();
@@ -838,9 +847,8 @@ int main_body(int argc, char *argv[])
 							i += 4;
 						}
 
-						char out_name[EI_MAX_NODE_NAME_LEN];
-
-						sprintf(out_name, "out_%s", name);
+						std::string out_name("out_");
+						out_name += name;
 
 						ei_node("outvar", name);
 							ei_param_token("name", name);
@@ -850,7 +858,7 @@ int main_body(int argc, char *argv[])
 							ei_param_bool("use_exposure", strcmp(use_exposure, "on") == 0 ? EI_TRUE : EI_FALSE);
 						ei_end_node();
 
-						ei_node("output", out_name);
+						ei_node("output", out_name.c_str());
 							ei_param_token("filename", file);
 							ei_param_enum("data_type", "rgb");
 							ei_param_array("var_list", ei_tab(EI_TYPE_TAG_NODE, 1));
@@ -858,7 +866,7 @@ int main_body(int argc, char *argv[])
 							ei_end_tab();
 						ei_end_node();
 
-						eiTag out_tag = ei_find_node(out_name);
+						eiTag out_tag = ei_find_node(out_name.c_str());
 
 						if (out_tag != EI_NULL_TAG)
 						{

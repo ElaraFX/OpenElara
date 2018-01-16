@@ -19,6 +19,8 @@
 #include <ei_vray_proxy_facade.h>
 #include <string>
 
+#include "ei_parse_abc.h"
+
 geometry (ess_loader)
 
 	enum
@@ -114,3 +116,59 @@ geometry (vrmesh_loader)
 	}
 
 end_shader (vrmesh_loader)
+
+geometry (abc_loader)
+
+	enum
+{
+	e_filename = 0, 
+	e_root_name, 
+	e_particle_radius,
+	e_particle_speed,
+	e_render_frame,
+};
+
+static void parameters()
+{
+	declare_token(filename, NULL);
+	declare_token(root_name, NULL);
+	declare_scalar(particle_radius, 0.05f);
+	declare_scalar(particle_speed, 1.0f);
+	declare_int(render_frame, 0);
+}
+
+static void init()
+{
+}
+
+static void exit()
+{
+}
+
+void init_node()
+{
+}
+
+void exit_node()
+{
+}
+
+void main(void *arg)
+{
+	ei_sub_context();
+
+	eiToken filename = eval_token(filename);
+	eiToken root_name = eval_token(root_name);
+	eiScalar particle_radius = eval_scalar(particle_radius);
+	eiInt render_frame = eval_int(render_frame);
+	eiScalar particle_speed = eval_scalar(particle_speed);
+
+	ei_parse_abc(filename.str, particle_radius, particle_speed, render_frame, EI_TRUE);
+
+	// set the root node for current procedural object
+	geometry_root(root_name.str);
+
+	ei_end_sub_context();
+}
+
+end_shader (abc_loader)
