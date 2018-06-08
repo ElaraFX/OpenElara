@@ -192,8 +192,8 @@ void AddDefaultOptions(EssWriter& writer, std::string &opt_name)
 	writer.AddBool("GI_cache_no_leak", true);
 	writer.AddScaler("display_gamma", 2.2f);
 	writer.AddScaler("texture_gamma", 2.2f);
-	writer.AddScaler("shader_gamma", 2.2f);
-	writer.AddScaler("light_gamma", 2.2f);
+	writer.AddScaler("shader_gamma", 1.0f);
+	writer.AddScaler("light_gamma", 1.0f);
 	writer.AddBool("exposure", false);
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
@@ -229,8 +229,8 @@ void AddMediumOptions(EssWriter &writer, std::string &opt_name)
 	writer.AddBool("GI_cache_no_leak", true);
 	writer.AddScaler("display_gamma", 2.2f);
 	writer.AddScaler("texture_gamma", 2.2f);
-	writer.AddScaler("shader_gamma", 2.2f);
-	writer.AddScaler("light_gamma", 2.2f);
+	writer.AddScaler("shader_gamma", 1.0f);
+	writer.AddScaler("light_gamma", 1.0f);
 	writer.AddBool("exposure", false);
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
@@ -266,8 +266,8 @@ void AddLowOptions(EssWriter &writer, std::string &opt_name)
 	writer.AddBool("GI_cache_no_leak", true);
 	writer.AddScaler("display_gamma", 2.2f);
 	writer.AddScaler("texture_gamma", 2.2f);
-	writer.AddScaler("shader_gamma", 2.2f);
-	writer.AddScaler("light_gamma", 2.2f);
+	writer.AddScaler("shader_gamma", 1.0f);
+	writer.AddScaler("light_gamma", 1.0f);
 	writer.AddBool("exposure", false);
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
@@ -303,8 +303,8 @@ void AddHighOptions(EssWriter &writer, std::string &opt_name)
 	writer.AddBool("GI_cache_no_leak", true);
 	writer.AddScaler("display_gamma", 2.2f);
 	writer.AddScaler("texture_gamma", 2.2f);
-	writer.AddScaler("shader_gamma", 2.2f);
-	writer.AddScaler("light_gamma", 2.2f);
+	writer.AddScaler("shader_gamma", 1.0f);
+	writer.AddScaler("light_gamma", 1.0f);
 	writer.AddBool("exposure", false);
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
@@ -340,8 +340,8 @@ void AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &option, s
 	writer.AddBool("GI_cache_no_leak", true);
 	writer.AddScaler("display_gamma", 2.2f);
 	writer.AddScaler("texture_gamma", 2.2f);
-	writer.AddScaler("shader_gamma", 2.2f);
-	writer.AddScaler("light_gamma", 2.2f);
+	writer.AddScaler("shader_gamma", 1.0f);
+	writer.AddScaler("light_gamma", 1.0f);
 	writer.AddBool("exposure", false);
 	writer.AddScaler("GI_cache_screen_scale", 1.0f);
 	writer.AddScaler("GI_cache_radius", 0.0f);
@@ -1182,6 +1182,8 @@ void EssExporter::SetGamma(const EH_Gamma &gamma)
 	mWriter.BeginNode("options", mOptionName);	
 	mWriter.AddScaler("texture_gamma", gamma.texture_gamma);
 	mWriter.AddScaler("display_gamma", gamma.display_gamma);
+	mWriter.AddScalar("shader_gamma", gamma.shader_gamma);
+	mWriter.AddScalar("light_gamma", gamma.light_gamma);
 	mWriter.EndNode();
 }
 

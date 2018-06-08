@@ -262,12 +262,15 @@ struct EH_Gamma
 {
 	float texture_gamma;
 	float display_gamma;
+	float shader_gamma;
+	float light_gamma;
 
 	EH_Gamma() :
 		texture_gamma(2.2f),
-		display_gamma(2.2f)
+		display_gamma(2.2f), 
+		shader_gamma(1.0f), 
+		light_gamma(1.0f)
 	{
-
 	}
 };
 /** Set render image gamma, you MUST call this function after set EH_RenderOptions
