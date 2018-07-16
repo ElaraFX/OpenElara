@@ -41,7 +41,7 @@ public:
 	void AddParseEss(const char *ess_name);
 	void EndNameSpace();
 	void LinkParam(const char* input, const std::string& shader, const char* output);
-	void AddScaler(const char* name, const float value);
+	void AddScalar(const char* name, const float value);
 	void AddInt(const char* name, const int value);
 	void AddVector4(const char* name, const eiVector4& value);
 	void AddVector3(const char* name, const eiVector& value);

@@ -69,11 +69,7 @@ std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& 
 		writer.AddRef("env_shader", envName);
 	}
 
- 	writer.AddScaler("focal", 1.0f);
-	writer.AddScaler("aperture", tan(cam.fov / 2.0f) * 2.0f); //how to deal with aperture?
-	writer.AddScaler("clip_hither", cam.near_clip);
-	writer.AddScaler("clip_yon", cam.far_clip);
-
+	float aspect = cam.aspect;
 	if (panorama)
 	{
 		writer.AddInt("res_x", panorama_size * 6);
@@ -81,10 +77,19 @@ std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& 
 	} 
 	else
 	{
-		writer.AddScaler("aspect", (((float)cam.image_width)/cam.image_height));
+		if (cam.aspect <= 0)
+		{
+			aspect = (((float)cam.image_width)/cam.image_height);
+		}
+		writer.AddScalar("aspect", aspect);
 		writer.AddInt("res_x", cam.image_width);
 		writer.AddInt("res_y", cam.image_height);
 	}	
+
+ 	writer.AddScalar("focal", 1.0f);
+	writer.AddScalar("aperture", tan(cam.fov / 2.0f) * 2.0f * aspect); //how to deal with aperture?
+	writer.AddScalar("clip_hither", cam.near_clip);
+	writer.AddScalar("clip_yon", cam.far_clip);
  	
 	writer.EndNode();
 
@@ -176,8 +181,8 @@ void AddDefaultOptions(EssWriter& writer, std::string &opt_name)
 	writer.AddInt("diffuse_samples", 8);
 	writer.AddInt("sss_samples", 16);
 	writer.AddInt("volume_indirect_samples", 8);
-	writer.AddScaler("light_cutoff", 0.01);
-	writer.AddScaler("GI_cache_density", 1.0);
+	writer.AddScalar("light_cutoff", 0.01);
+	writer.AddScalar("GI_cache_density", 1.0);
 	writer.AddInt("GI_cache_passes", 100);	
 	writer.AddInt("GI_cache_points", 5);
 	writer.AddEnum("GI_cache_preview", "accurate");
@@ -186,17 +191,17 @@ void AddDefaultOptions(EssWriter& writer, std::string &opt_name)
 	writer.AddBool("caustic", false);
 	writer.AddBool("motion", false);
 	writer.AddBool("use_clamp", false);
-	writer.AddScaler("clamp_value", 20.0f);
+	writer.AddScalar("clamp_value", 20.0f);
 	writer.AddBool("displace", false);	
 	writer.AddEnum("engine", "GI cache");
 	writer.AddBool("GI_cache_no_leak", true);
-	writer.AddScaler("display_gamma", 2.2f);
-	writer.AddScaler("texture_gamma", 2.2f);
-	writer.AddScaler("shader_gamma", 1.0f);
-	writer.AddScaler("light_gamma", 1.0f);
+	writer.AddScalar("display_gamma", 2.2f);
+	writer.AddScalar("texture_gamma", 2.2f);
+	writer.AddScalar("shader_gamma", 1.0f);
+	writer.AddScalar("light_gamma", 1.0f);
 	writer.AddBool("exposure", false);
-	writer.AddScaler("GI_cache_screen_scale", 1.0f);
-	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.AddScalar("GI_cache_screen_scale", 1.0f);
+	writer.AddScalar("GI_cache_radius", 0.0f);
 	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
 }
@@ -213,8 +218,8 @@ void AddMediumOptions(EssWriter &writer, std::string &opt_name)
 	writer.AddInt("diffuse_samples", 4);
 	writer.AddInt("sss_samples", 16);
 	writer.AddInt("volume_indirect_samples", 8);
-	writer.AddScaler("light_cutoff", 0.01);
-	writer.AddScaler("GI_cache_density", 1.0);
+	writer.AddScalar("light_cutoff", 0.01);
+	writer.AddScalar("GI_cache_density", 1.0);
 	writer.AddInt("GI_cache_passes", 100);	
 	writer.AddInt("GI_cache_points", 5);
 	writer.AddEnum("GI_cache_preview", "accurate");
@@ -223,17 +228,17 @@ void AddMediumOptions(EssWriter &writer, std::string &opt_name)
 	writer.AddBool("caustic", false);
 	writer.AddBool("motion", false);
 	writer.AddBool("use_clamp", false);
-	writer.AddScaler("clamp_value", 20.0f);
+	writer.AddScalar("clamp_value", 20.0f);
 	writer.AddBool("displace", false);	
 	writer.AddEnum("engine", "GI cache");
 	writer.AddBool("GI_cache_no_leak", true);
-	writer.AddScaler("display_gamma", 2.2f);
-	writer.AddScaler("texture_gamma", 2.2f);
-	writer.AddScaler("shader_gamma", 1.0f);
-	writer.AddScaler("light_gamma", 1.0f);
+	writer.AddScalar("display_gamma", 2.2f);
+	writer.AddScalar("texture_gamma", 2.2f);
+	writer.AddScalar("shader_gamma", 1.0f);
+	writer.AddScalar("light_gamma", 1.0f);
 	writer.AddBool("exposure", false);
-	writer.AddScaler("GI_cache_screen_scale", 1.0f);
-	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.AddScalar("GI_cache_screen_scale", 1.0f);
+	writer.AddScalar("GI_cache_radius", 0.0f);
 	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
 }
@@ -250,8 +255,8 @@ void AddLowOptions(EssWriter &writer, std::string &opt_name)
 	writer.AddInt("diffuse_samples", 4);
 	writer.AddInt("sss_samples", 16);
 	writer.AddInt("volume_indirect_samples", 8);
-	writer.AddScaler("light_cutoff", 0.01);
-	writer.AddScaler("GI_cache_density", 0.5);
+	writer.AddScalar("light_cutoff", 0.01);
+	writer.AddScalar("GI_cache_density", 0.5);
 	writer.AddInt("GI_cache_passes", 50);
 	writer.AddInt("GI_cache_points", 5);
 	writer.AddEnum("GI_cache_preview", "accurate");
@@ -260,17 +265,17 @@ void AddLowOptions(EssWriter &writer, std::string &opt_name)
 	writer.AddBool("caustic", false);
 	writer.AddBool("motion", false);
 	writer.AddBool("use_clamp", false);
-	writer.AddScaler("clamp_value", 20.0f);
+	writer.AddScalar("clamp_value", 20.0f);
 	writer.AddBool("displace", false);
 	writer.AddEnum("engine", "GI cache");
 	writer.AddBool("GI_cache_no_leak", true);
-	writer.AddScaler("display_gamma", 2.2f);
-	writer.AddScaler("texture_gamma", 2.2f);
-	writer.AddScaler("shader_gamma", 1.0f);
-	writer.AddScaler("light_gamma", 1.0f);
+	writer.AddScalar("display_gamma", 2.2f);
+	writer.AddScalar("texture_gamma", 2.2f);
+	writer.AddScalar("shader_gamma", 1.0f);
+	writer.AddScalar("light_gamma", 1.0f);
 	writer.AddBool("exposure", false);
-	writer.AddScaler("GI_cache_screen_scale", 1.0f);
-	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.AddScalar("GI_cache_screen_scale", 1.0f);
+	writer.AddScalar("GI_cache_radius", 0.0f);
 	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
 }
@@ -287,8 +292,8 @@ void AddHighOptions(EssWriter &writer, std::string &opt_name)
 	writer.AddInt("diffuse_samples", 8);
 	writer.AddInt("sss_samples", 16);
 	writer.AddInt("volume_indirect_samples", 8);
-	writer.AddScaler("light_cutoff", 0.01);
-	writer.AddScaler("GI_cache_density", 1.0);
+	writer.AddScalar("light_cutoff", 0.01);
+	writer.AddScalar("GI_cache_density", 1.0);
 	writer.AddInt("GI_cache_passes", 150);	
 	writer.AddInt("GI_cache_points", 5);
 	writer.AddEnum("GI_cache_preview", "accurate");
@@ -297,17 +302,17 @@ void AddHighOptions(EssWriter &writer, std::string &opt_name)
 	writer.AddBool("caustic", false);
 	writer.AddBool("motion", false);
 	writer.AddBool("use_clamp", false);
-	writer.AddScaler("clamp_value", 20.0f);
+	writer.AddScalar("clamp_value", 20.0f);
 	writer.AddBool("displace", false);	
 	writer.AddEnum("engine", "GI cache");
 	writer.AddBool("GI_cache_no_leak", true);
-	writer.AddScaler("display_gamma", 2.2f);
-	writer.AddScaler("texture_gamma", 2.2f);
-	writer.AddScaler("shader_gamma", 1.0f);
-	writer.AddScaler("light_gamma", 1.0f);
+	writer.AddScalar("display_gamma", 2.2f);
+	writer.AddScalar("texture_gamma", 2.2f);
+	writer.AddScalar("shader_gamma", 1.0f);
+	writer.AddScalar("light_gamma", 1.0f);
 	writer.AddBool("exposure", false);
-	writer.AddScaler("GI_cache_screen_scale", 1.0f);
-	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.AddScalar("GI_cache_screen_scale", 1.0f);
+	writer.AddScalar("GI_cache_radius", 0.0f);
 	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
 }
@@ -324,8 +329,8 @@ void AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &option, s
 	writer.AddInt("diffuse_samples", option.diffuse_sample_num);
 	writer.AddInt("sss_samples", 16);
 	writer.AddInt("volume_indirect_samples", 8);
-	writer.AddScaler("light_cutoff", 0.01);
-	writer.AddScaler("GI_cache_density", 1.0);
+	writer.AddScalar("light_cutoff", 0.01);
+	writer.AddScalar("GI_cache_density", 1.0);
 	writer.AddInt("GI_cache_passes", 150);	
 	writer.AddInt("GI_cache_points", 5);
 	writer.AddEnum("GI_cache_preview", "accurate");
@@ -334,17 +339,17 @@ void AddCustomOptions(EssWriter &writer, const EH_CustomRenderOptions &option, s
 	writer.AddBool("caustic", false);
 	writer.AddBool("motion", false);
 	writer.AddBool("use_clamp", false);
-	writer.AddScaler("clamp_value", 20.0f);
+	writer.AddScalar("clamp_value", 20.0f);
 	writer.AddBool("displace", false);	
 	writer.AddEnum("engine", "GI cache");
 	writer.AddBool("GI_cache_no_leak", true);
-	writer.AddScaler("display_gamma", 2.2f);
-	writer.AddScaler("texture_gamma", 2.2f);
-	writer.AddScaler("shader_gamma", 1.0f);
-	writer.AddScaler("light_gamma", 1.0f);
+	writer.AddScalar("display_gamma", 2.2f);
+	writer.AddScalar("texture_gamma", 2.2f);
+	writer.AddScalar("shader_gamma", 1.0f);
+	writer.AddScalar("light_gamma", 1.0f);
 	writer.AddBool("exposure", false);
-	writer.AddScaler("GI_cache_screen_scale", 1.0f);
-	writer.AddScaler("GI_cache_radius", 0.0f);
+	writer.AddScalar("GI_cache_screen_scale", 1.0f);
+	writer.AddScalar("GI_cache_radius", 0.0f);
 	writer.AddBool("GI_cache_show_samples", g_gi_cache_show_samples);
 	writer.EndNode();
 }
@@ -422,10 +427,10 @@ std::string AddHDRI(EssWriter& writer, const std::string hdri_name, float rotati
 	std::string uvgenName = texName + "_uvgen";
 	writer.BeginNode("max_stduv", uvgenName);
 	writer.AddToken("mapChannel", "uv0");
-	writer.AddScaler("uOffset", rotation/360.0f);
-	writer.AddScaler("uScale", 1.0f);
+	writer.AddScalar("uOffset", rotation/360.0f);
+	writer.AddScalar("uScale", 1.0f);
 	writer.AddBool("uWrap", true);
-	writer.AddScaler("vScale", 1.0f);
+	writer.AddScalar("vScale", 1.0f);
 	writer.AddBool("vWrap", true);
 	writer.AddInt("slotType", 1);
 	writer.AddInt("coordMapping", 1);
@@ -441,7 +446,7 @@ std::string AddHDRI(EssWriter& writer, const std::string hdri_name, float rotati
 	std::string stdoutName = texName + "_stdout";
 	writer.BeginNode("max_stdout", stdoutName);
 	writer.AddInt("useColorMap", 0);
-	writer.AddScaler("outputAmount", intensity);
+	writer.AddScalar("outputAmount", intensity);
 	writer.LinkParam("stdout_color", bitmapName, "result");
 	writer.EndNode();
 
@@ -499,10 +504,10 @@ std::string AddSun(EssWriter& writer, const eiMatrix &mat, const float intensity
 {
 	std::string sunName = "elara_sun";
 	writer.BeginNode("directlight", sunName);
-	writer.AddScaler("intensity", intensity);
+	writer.AddScalar("intensity", intensity);
 	writer.AddEnum("face", "both");
 	writer.AddColor("color", sun_color);
-	writer.AddScaler("hardness", hardness);
+	writer.AddScalar("hardness", hardness);
 	writer.AddInt("samples", samples);
 	writer.EndNode();
 
@@ -726,34 +731,34 @@ void TranslateLight(EssWriter& writer, const char *pTypeName, const EH_Light &li
 			writer.AddRef("map", envName);
 		}		
 		writer.AddColor("color", light_default_color);
-		writer.AddScaler("width", light.size[0] );
-		writer.AddScaler("height", light.size[1]);
-		writer.AddScaler("intensity", light.intensity);
+		writer.AddScalar("width", light.size[0] );
+		writer.AddScalar("height", light.size[1]);
+		writer.AddScalar("intensity", light.intensity);
 	}
 	else if (light.type == EH_LIGHT_SPHERE)
 	{		
-		writer.AddScaler("radius", light.size[0]);
+		writer.AddScalar("radius", light.size[0]);
 		writer.AddColor("color", light_default_color);
-		writer.AddScaler("intensity", light.intensity);
+		writer.AddScalar("intensity", light.intensity);
 	}
 	else if (light.type == EH_LIGHT_QUAD)
 	{
-		writer.AddScaler("width", light.size[0] );
-		writer.AddScaler("height", light.size[1]);
+		writer.AddScalar("width", light.size[0] );
+		writer.AddScalar("height", light.size[1]);
 		writer.AddColor("color", light_default_color);
-		writer.AddScaler("intensity", light.intensity);
+		writer.AddScalar("intensity", light.intensity);
 	}
 	else if (light.type == EH_LIGHT_SPOT)
 	{
-		writer.AddScaler("spread", light.size[0] );
-		writer.AddScaler("deltaangle", light.size[1]);
+		writer.AddScalar("spread", light.size[0] );
+		writer.AddScalar("deltaangle", light.size[1]);
 		writer.AddColor("color", light_default_color);
-		writer.AddScaler("intensity", light.intensity);
+		writer.AddScalar("intensity", light.intensity);
 	}
 	else if (light.type == EH_LIGHT_POINT)
 	{
 		writer.AddColor("color", light_default_color);
-		writer.AddScaler("intensity", light.intensity);
+		writer.AddScalar("intensity", light.intensity);
 	}
 
 	writer.AddInt("samples", samples);
@@ -768,18 +773,18 @@ void TranslateIES(EssWriter& writer, const EH_Light &light, const std::string &l
 
 	writer.BeginNode("std_light_filter", filterName);
 		writer.AddBool("use_near_atten", false);
-		writer.AddScaler("near_start", 140.0f);
-		writer.AddScaler("near_stop", 140.0f);
+		writer.AddScalar("near_start", 140.0f);
+		writer.AddScalar("near_stop", 140.0f);
 		writer.AddBool("use_far_atten", false);
-		writer.AddScaler("far_start", 80.0f);
-		writer.AddScaler("far_stop", 200.0f);
+		writer.AddScalar("far_start", 80.0f);
+		writer.AddScalar("far_stop", 200.0f);
 		writer.AddBool("use_web_dist", true);
 		writer.AddToken("web_filename", web_filename);
-		writer.AddScaler("web_scale", 0.000029f);
+		writer.AddScalar("web_scale", 0.000029f);
 	writer.EndNode();
 
 	writer.BeginNode("pointlight", lightName);
-		writer.AddScaler("intensity", light.intensity);
+		writer.AddScalar("intensity", light.intensity);
 		writer.AddColor("color", color);
 		writer.AddRef("shader", filterName);
 		writer.AddInt("samples", samples);
@@ -834,9 +839,9 @@ std::string AddTexture(EssWriter& writer, const std::string texPath, const float
 	std::string uvgenName = texName + "_uvgen";
 	writer.BeginNode("max_stduv", uvgenName);
 	writer.AddToken("mapChannel", "uv0");
-	writer.AddScaler("uScale", repeat_u);
+	writer.AddScalar("uScale", repeat_u);
 	writer.AddBool("uWrap", true);
-	writer.AddScaler("vScale", repeat_v);
+	writer.AddScalar("vScale", repeat_v);
 	writer.AddBool("vWrap", true);
 	writer.EndNode();
 
@@ -861,9 +866,9 @@ std::string AddAlphaTexture(EssWriter& writer, const std::string &texPath, const
 	std::string uvgenName = texName + "_uvgen";
 	writer.BeginNode("max_stduv", uvgenName);
 	writer.AddToken("mapChannel", "uv0");
-	writer.AddScaler("uScale", repeat_u);
+	writer.AddScalar("uScale", repeat_u);
 	writer.AddBool("uWrap", true);
-	writer.AddScaler("vScale", repeat_v);
+	writer.AddScalar("vScale", repeat_v);
 	writer.AddBool("vWrap", true);
 	writer.EndNode();
 
@@ -982,32 +987,32 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 		writer.AddColor("refraction_color", refraction_color);
 	}
 
-	writer.AddScaler("diffuse_weight", mat.diffuse_weight);
-	writer.AddScaler("roughness", mat.roughness);
-	writer.AddScaler("backlighting_weight", mat.backlight);
+	writer.AddScalar("diffuse_weight", mat.diffuse_weight);
+	writer.AddScalar("roughness", mat.roughness);
+	writer.AddScalar("backlighting_weight", mat.backlight);
 
-	writer.AddScaler("bump_weight", mat.bump_weight);
+	writer.AddScalar("bump_weight", mat.bump_weight);
 
-	writer.AddScaler("specular_weight", mat.specular_weight);
-	writer.AddScaler("glossiness", mat.glossiness);
-	writer.AddScaler("fresnel_ior_glossy", mat.specular_fresnel);
-	writer.AddScaler("anisotropy", mat.anisotropy);
+	writer.AddScalar("specular_weight", mat.specular_weight);
+	writer.AddScalar("glossiness", mat.glossiness);
+	writer.AddScalar("fresnel_ior_glossy", mat.specular_fresnel);
+	writer.AddScalar("anisotropy", mat.anisotropy);
 
 	eiVector reflection_color = ei_vector(mat.mirror_color[0], mat.mirror_color[1], mat.mirror_color[2]);
-	writer.AddScaler("reflection_weight", mat.mirror_weight);
+	writer.AddScalar("reflection_weight", mat.mirror_weight);
 	writer.AddColor("reflection_color", reflection_color);
-	writer.AddScaler("fresnel_ior", mat.mirror_fresnel);
+	writer.AddScalar("fresnel_ior", mat.mirror_fresnel);
 
-	writer.AddScaler("refraction_weight", mat.refract_weight);
-	writer.AddScaler("refraction_glossiness", mat.refract_glossiness);
-	writer.AddScaler("ior", mat.ior);
+	writer.AddScalar("refraction_weight", mat.refract_weight);
+	writer.AddScalar("refraction_glossiness", mat.refract_glossiness);
+	writer.AddScalar("ior", mat.ior);
 	writer.AddInt("refraction_invert_weight", mat.refract_invert_weight);
 
-	writer.AddScaler("transparency_weight", mat.transp_weight);
+	writer.AddScalar("transparency_weight", mat.transp_weight);
 	writer.AddInt("transparency_invert_weight", mat.transp_invert_weight);
 
-	writer.AddScaler("emission_weight", mat.emission_weight);
-	writer.AddScaler("displace_weight", mat.displace_weight);
+	writer.AddScalar("emission_weight", mat.emission_weight);
+	writer.AddScalar("displace_weight", mat.displace_weight);
 
 	writer.EndNode();
 
@@ -1169,19 +1174,19 @@ void EssExporter::SetExposure(const EH_Exposure &exposure)
 {
 	mWriter.BeginNode("options", mOptionName);
 		mWriter.AddBool("exposure", true);
-		mWriter.AddScaler("exposure_value", exposure.exposure_value);
-		mWriter.AddScaler("exposure_highlight", exposure.exposure_highlight);
-		mWriter.AddScaler("exposure_shadow", exposure.exposure_shadow);
-		mWriter.AddScaler("exposure_saturation", exposure.exposure_saturation);
-		mWriter.AddScaler("exposure_whitepoint", exposure.exposure_whitepoint);
+		mWriter.AddScalar("exposure_value", exposure.exposure_value);
+		mWriter.AddScalar("exposure_highlight", exposure.exposure_highlight);
+		mWriter.AddScalar("exposure_shadow", exposure.exposure_shadow);
+		mWriter.AddScalar("exposure_saturation", exposure.exposure_saturation);
+		mWriter.AddScalar("exposure_whitepoint", exposure.exposure_whitepoint);
 	mWriter.EndNode();
 }
 
 void EssExporter::SetGamma(const EH_Gamma &gamma)
 {
 	mWriter.BeginNode("options", mOptionName);	
-	mWriter.AddScaler("texture_gamma", gamma.texture_gamma);
-	mWriter.AddScaler("display_gamma", gamma.display_gamma);
+	mWriter.AddScalar("texture_gamma", gamma.texture_gamma);
+	mWriter.AddScalar("display_gamma", gamma.display_gamma);
 	mWriter.AddScalar("shader_gamma", gamma.shader_gamma);
 	mWriter.AddScalar("light_gamma", gamma.light_gamma);
 	mWriter.EndNode();
@@ -1211,7 +1216,11 @@ void EssExporter::AddMesh(const EH_Mesh& model, const std::string &modelName)
 
 	std::vector<uint_t> filter_vert_index;	
 	std::vector<uint_t> filter_mtl_index;
+	std::vector<uint_t> filter_n_index;
+	std::vector<uint_t> filter_uv_index;
 	filter_vert_index.reserve(model.num_faces * 3);
+	filter_n_index.reserve(model.num_faces * 3);
+	filter_uv_index.reserve(model.num_faces * 3);
 	if (model.mtl_indices)
 	{		
 		filter_mtl_index.reserve(model.num_faces);
@@ -1219,6 +1228,8 @@ void EssExporter::AddMesh(const EH_Mesh& model, const std::string &modelName)
 	for (int i = 0; i < model.num_faces; ++i)
 	{
 		uint_t *p_index = (uint_t*)model.face_indices + (i * 3);
+		uint_t *n_index = (uint_t*)model.n_indices + (i * 3);
+		uint_t *uv_index = (uint_t*)model.uv_indices + (i * 3);
 		uint_t index0 = (*p_index);
 		uint_t index1 = (*(p_index + 1));
 		uint_t index2 = (*(p_index + 2));
@@ -1231,6 +1242,18 @@ void EssExporter::AddMesh(const EH_Mesh& model, const std::string &modelName)
 			filter_vert_index.push_back(index0);
 			filter_vert_index.push_back(index1);
 			filter_vert_index.push_back(index2);
+			if (model.n_indices != NULL)
+			{
+				filter_n_index.push_back(*n_index);
+				filter_n_index.push_back(*(n_index + 1));
+				filter_n_index.push_back(*(n_index + 2));
+			}
+			if (model.uv_indices != NULL)
+			{
+				filter_uv_index.push_back(*uv_index);
+				filter_uv_index.push_back(*(uv_index + 1));
+				filter_uv_index.push_back(*(uv_index + 2));
+			}
 
 			if (model.mtl_indices)
 			{
@@ -1242,14 +1265,34 @@ void EssExporter::AddMesh(const EH_Mesh& model, const std::string &modelName)
 
 	if (model.normals)
 	{
-		mWriter.AddDeclare("vector[]", "N", "varying");
-		mWriter.AddPointArray("N", (eiVector*)model.normals, model.num_verts);
+		if (model.n_indices == NULL)
+		{
+			mWriter.AddDeclare("vector[]", "N", "varying");
+			mWriter.AddPointArray("N", (eiVector*)model.normals, model.num_verts);
+		}
+		else
+		{
+			mWriter.AddDeclare("vector[]", "N", "facevarying");
+			mWriter.AddPointArray("N", (eiVector*)model.normals, model.num_verts);
+			mWriter.AddDeclare("index[]", "N_idx", "facevarying");
+			mWriter.AddIndexArray("N_idx", &filter_n_index[0], filter_n_index.size(), false);
+		}
 	}
 
 	if(model.uvs)
 	{
-		mWriter.AddDeclare("vector2[]", "uv0", "varying");
-		mWriter.AddVector2Array("uv0", (eiVector2*)model.uvs, model.num_verts);
+		if (model.uv_indices == NULL)
+		{
+			mWriter.AddDeclare("vector2[]", "uv0", "varying");
+			mWriter.AddVector2Array("uv0", (eiVector2*)model.uvs, model.num_verts);
+		}
+		else
+		{
+			mWriter.AddDeclare("vector2[]", "uv0", "facevarying");
+			mWriter.AddVector2Array("uv0", (eiVector2*)model.uvs, model.num_verts);
+			mWriter.AddDeclare("index[]", "uv0_idx", "facevarying");
+			mWriter.AddIndexArray("uv0_idx", &filter_uv_index[0], filter_uv_index.size(), false);
+		}
 	}	
 
 	if (model.mtl_indices)
@@ -1296,14 +1339,14 @@ void EssExporter::EndExport()
 		mWriter.BeginNode("approx", global_approx);
 		mWriter.AddInt("method", 1);
 		mWriter.AddBool("view_dep", true);
-		mWriter.AddScaler("edge_length", 1.0f);
-		mWriter.AddScaler("motion_factor", 16.0f);
+		mWriter.AddScalar("edge_length", 1.0f);
+		mWriter.AddScalar("motion_factor", 16.0f);
 		mWriter.AddInt("max_subdiv", 7);
 		mWriter.EndNode();
 
 		mWriter.BeginNode("options", optName);
 		mWriter.AddBool("displace", true);
-		mWriter.AddScaler("max_displace", 1.0f);
+		mWriter.AddScalar("max_displace", 1.0f);
 		mWriter.AddRef("approx", global_approx);
 		mWriter.EndNode();
 

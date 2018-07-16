@@ -187,7 +187,7 @@ void EssWriter::LinkParam(const char* input, const string& shader, const char* o
 }
 
 
-void EssWriter::AddScaler(const char* name, const float value)
+void EssWriter::AddScalar(const char* name, const float value)
 {
 	CHECK_STREAM();
 	CHECK_EDIT_MODE();

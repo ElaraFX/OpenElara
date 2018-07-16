@@ -284,6 +284,7 @@ struct EH_Camera
 	float fov;              /**< Field of view in the horizontal direction, in radians. */
 	float near_clip;
 	float far_clip;
+	float aspect;
 	uint_t image_width;
 	uint_t image_height;
 	EH_Mat view_to_world;	/**< View to world transform matrix,it's the inverse of view matrix. */
@@ -295,6 +296,7 @@ struct EH_Camera
 		fov(0.0f),
 		near_clip(0.0f),
 		far_clip(0.0f),
+		aspect(-1),
 		image_width(0),
 		image_height(0),
 		cubemap_render(false),
@@ -321,6 +323,8 @@ struct EH_Mesh
 	EH_Vec *normals;
 	EH_Vec2 *uvs;
 	uint_t *face_indices;		/** Should have (num_faces * 3) indices */
+	uint_t *n_indices;			
+	uint_t *uv_indices;	
 	uint_t *mtl_indices;        /** For multiple material model. Material index on every triangle */
 
 	EH_Mesh() :
@@ -330,6 +334,8 @@ struct EH_Mesh
 		normals(NULL),
 		uvs(NULL),
 		face_indices(NULL),
+		n_indices(NULL),
+		uv_indices(NULL),
 		mtl_indices(NULL)
 	{
 
