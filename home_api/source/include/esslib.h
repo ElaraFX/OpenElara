@@ -78,8 +78,9 @@ public:
 	void SetGamma(const EH_Gamma &gamma);
 	bool AddDefaultMaterial();
 	void AddCustomOption(const EH_CustomRenderOptions &option);
-	bool AddBackground(const std::string &hdri_name, const float rotation, const float hdri_intensity, bool enable_emit_GI);
+	bool AddBackground(const EH_Sky *sky, bool enable_emit_GI);
 	bool AddSun(const EH_Sun &sun);
+	bool AddSun(const EH_Sun &sun, eiMatrix &mat);
 	void SetTexPath(std::string &path);
 	void AddAssemblyInstance(const char *name, const EH_AssemblyInstance &assembly_inst);
 	void AddMaterialFromEss(const EH_Material &mat, std::string matName, const char *essName);

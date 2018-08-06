@@ -30,7 +30,7 @@ const eiMatrix l2r = ei_matrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1);
 bool g_check_normal = false;
 bool g_gi_cache_show_samples = false;
 
-std::string AddTexture(EssWriter& writer, const std::string texPath, const float repeat_u, float repeat_v, const std::string texName, const std::string rootPath);
+std::string AddTexture(EssWriter& writer, const EH_Texture &t, const std::string texName, const std::string rootPath);
 std::string AddNormalBump(EssWriter& writer, const std::string &normalMap);
 
 std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& NodeName, std::string& envName, bool panorama, int panorama_size, bool is_lefthand)
@@ -294,7 +294,7 @@ void AddHighOptions(EssWriter &writer, std::string &opt_name)
 	writer.AddInt("volume_indirect_samples", 8);
 	writer.AddScalar("light_cutoff", 0.01);
 	writer.AddScalar("GI_cache_density", 1.0);
-	writer.AddInt("GI_cache_passes", 150);	
+	writer.AddInt("GI_cache_passes", 300);	
 	writer.AddInt("GI_cache_points", 5);
 	writer.AddEnum("GI_cache_preview", "accurate");
 	writer.AddInt("diffuse_depth", 5);
@@ -454,17 +454,27 @@ std::string AddHDRI(EssWriter& writer, const std::string hdri_name, float rotati
 }
 
 
-std::string AddBackground(EssWriter& writer, const std::string &hdri_name, const float rotation, const float hdri_intensity, bool enable_emit_GI)
+std::string AddBackground(EssWriter& writer, const EH_Sky *sky, bool enable_emit_GI)
 {
-	std::string sky_shader;
-	sky_shader = AddHDRI(writer, hdri_name, rotation, hdri_intensity);
+	if (sky->hdri_name != NULL && !std::string(sky->hdri_name).empty())
+	{
+		std::string sky_shader;
+		sky_shader = AddHDRI(writer, std::string(sky->hdri_name), sky->hdri_rotation, sky->intensity);
+		writer.BeginNode("output_result", "global_environment");
+		writer.LinkParam("input", sky_shader, "result");	
+		writer.AddBool("env_emits_GI", enable_emit_GI);
+		writer.EndNode();
+	}
+	else
+	{
+		eiVector color = ei_vector(sky->color[0], sky->color[1], sky->color[2]);
+		writer.BeginNode("output_result", "global_environment");
+		writer.AddColor("input", color);
+		writer.AddBool("env_emits_GI", enable_emit_GI);
+		writer.EndNode();
+	}
 
-	if (sky_shader.empty())return "";
-
-	writer.BeginNode("output_result", "global_environment");
-	writer.LinkParam("input", sky_shader, "result");	
-	writer.AddBool("env_emits_GI", enable_emit_GI);
-	writer.EndNode();
+	
 
 	std::vector<std::string> names;
 	names.push_back("global_environment");
@@ -601,11 +611,11 @@ void EssExporter::AddMaterialFromEss(const EH_Material &mat, std::string matName
 	std::string transparent_tex_node, diffuse_tex_node, normal_map_tex_node, specular_tex_node, emission_tex_node;
 	if(mat.diffuse_tex.filename && strlen(mat.diffuse_tex.filename) > 0)
 	{
-		diffuse_tex_node = AddTexture(mWriter, mat.diffuse_tex.filename, mat.diffuse_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_d", mRootPath);
+		diffuse_tex_node = AddTexture(mWriter, mat.diffuse_tex, matName + "_d", mRootPath);
 	}	
 	if(mat.bump_tex.filename && strlen(mat.bump_tex.filename) > 0)
 	{
-		normal_map_tex_node = AddTexture(mWriter, mat.bump_tex.filename, mat.bump_tex.repeat_u, mat.bump_tex.repeat_v, matName + "_n", mRootPath);
+		normal_map_tex_node = AddTexture(mWriter, mat.bump_tex, matName + "_n", mRootPath);
 		if(mat.normal_bump)
 		{
 			normal_map_tex_node = AddNormalBump(mWriter, normal_map_tex_node);
@@ -613,15 +623,15 @@ void EssExporter::AddMaterialFromEss(const EH_Material &mat, std::string matName
 	}
 	if(mat.specular_tex.filename && strlen(mat.specular_tex.filename) > 0)
 	{
-		specular_tex_node = AddTexture(mWriter, mat.specular_tex.filename, mat.specular_tex.repeat_u, mat.specular_tex.repeat_v, matName + "_s", mRootPath);
+		specular_tex_node = AddTexture(mWriter, mat.specular_tex, matName + "_s", mRootPath);
 	}
 	if(mat.transp_tex.filename && strlen(mat.transp_tex.filename) > 0)
 	{
-		transparent_tex_node = AddTexture(mWriter, mat.transp_tex.filename, mat.transp_tex.repeat_u, mat.transp_tex.repeat_v, matName + "_t", mRootPath);
+		transparent_tex_node = AddTexture(mWriter, mat.transp_tex, matName + "_t", mRootPath);
 	}
 	if(mat.emission_tex.filename && strlen(mat.emission_tex.filename) > 0)
 	{
-		emission_tex_node = AddTexture(mWriter, mat.emission_tex.filename, mat.emission_tex.repeat_u, mat.emission_tex.repeat_v, matName + "_e", mRootPath);
+		emission_tex_node = AddTexture(mWriter, mat.emission_tex, matName + "_e", mRootPath);
 	}
 
 	std::string ei_standard_node = matName + "_ei_stn";
@@ -833,16 +843,19 @@ std::string AddLight(EssWriter& writer, const EH_Light& light, std::string &ligh
 	return instanceName;
 }
 
-std::string AddTexture(EssWriter& writer, const std::string texPath, const float repeat_u, float repeat_v, const std::string texName, const std::string rootPath){
+std::string AddTexture(EssWriter& writer, const EH_Texture &t, const std::string texName, const std::string rootPath){
+	std::string texPath = t.filename;
 	if(texPath.empty())return "";
 
 	std::string uvgenName = texName + "_uvgen";
 	writer.BeginNode("max_stduv", uvgenName);
 	writer.AddToken("mapChannel", "uv0");
-	writer.AddScalar("uScale", repeat_u);
+	writer.AddScalar("uScale", t.repeat_u);
 	writer.AddBool("uWrap", true);
-	writer.AddScalar("vScale", repeat_v);
+	writer.AddScalar("vScale", t.repeat_v);
 	writer.AddBool("vWrap", true);
+	writer.AddScalar("uOffset", t.offset_u);
+	writer.AddScalar("vOffset", t.offset_v);
 	writer.EndNode();
 
 	std::string bitmapName = texName + "_bitmap";
@@ -855,21 +868,25 @@ std::string AddTexture(EssWriter& writer, const std::string texPath, const float
 	writer.BeginNode("max_stdout", stdoutName);
 	writer.AddInt("useColorMap", 0);
 	writer.LinkParam("stdout_color", bitmapName, "result");
+	writer.LinkParam("stdout_bump", bitmapName, "result_bump");
 	writer.EndNode();
 
 	return stdoutName;
 }
 
-std::string AddAlphaTexture(EssWriter& writer, const std::string &texPath, const float repeat_u, float repeat_v, const std::string &texName, const std::string &rootPath){
+std::string AddAlphaTexture(EssWriter& writer, const EH_Texture &t, const std::string &texName, const std::string &rootPath){
+	std::string texPath = t.filename;
 	if(texPath.empty())return "";
 
 	std::string uvgenName = texName + "_uvgen";
 	writer.BeginNode("max_stduv", uvgenName);
 	writer.AddToken("mapChannel", "uv0");
-	writer.AddScalar("uScale", repeat_u);
+	writer.AddScalar("uScale", t.repeat_u);
 	writer.AddBool("uWrap", true);
-	writer.AddScalar("vScale", repeat_v);
+	writer.AddScalar("vScale", t.repeat_v);
 	writer.AddBool("vWrap", true);
+	writer.AddScalar("uOffset", t.offset_u);
+	writer.AddScalar("vOffset", t.offset_v);
 	writer.EndNode();
 
 	std::string bitmapName = texName + "_bitmap";
@@ -893,7 +910,7 @@ std::string AddAlphaTexture(EssWriter& writer, const std::string &texPath, const
 std::string AddNormalBump(EssWriter& writer, const std::string &normalMap){
 	std::string normalName = normalMap + "_normal";
 	writer.BeginNode("max_normal_bump", normalName);
-	writer.LinkParam("tex_normal_map", normalMap, "result");
+	writer.LinkParam("tex_normal_map", normalMap, "result_bump");
 	writer.EndNode();
 	return normalName;
 }
@@ -904,11 +921,11 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	std::string transparent_tex_node, diffuse_tex_node, normal_map_tex_node, specular_tex_node, emission_tex_node, displace_tex_node, refract_tex_node;
 	if(mat.diffuse_tex.filename && strlen(mat.diffuse_tex.filename) > 0)
 	{
-		diffuse_tex_node = AddTexture(writer, mat.diffuse_tex.filename, mat.diffuse_tex.repeat_u, mat.diffuse_tex.repeat_v, matName + "_d", rootPath);
+		diffuse_tex_node = AddTexture(writer, mat.diffuse_tex, matName + "_d", rootPath);
 	}	
 	if(mat.bump_tex.filename && strlen(mat.bump_tex.filename) > 0)
 	{
-		normal_map_tex_node = AddTexture(writer, mat.bump_tex.filename, mat.bump_tex.repeat_u, mat.bump_tex.repeat_v, matName + "_n", rootPath);
+		normal_map_tex_node = AddTexture(writer, mat.bump_tex, matName + "_n", rootPath);
 		if(mat.normal_bump)
 		{
 			normal_map_tex_node = AddNormalBump(writer, normal_map_tex_node);
@@ -916,23 +933,23 @@ std::string AddMaterial(EssWriter& writer, const EH_Material& mat, std::string &
 	}
 	if(mat.specular_tex.filename && strlen(mat.specular_tex.filename) > 0)
 	{
-		specular_tex_node = AddTexture(writer, mat.specular_tex.filename, mat.specular_tex.repeat_u, mat.specular_tex.repeat_v, matName + "_s", rootPath);
+		specular_tex_node = AddTexture(writer, mat.specular_tex, matName + "_s", rootPath);
 	}
 	if(mat.transp_tex.filename && strlen(mat.transp_tex.filename) > 0)
 	{
-		transparent_tex_node = AddTexture(writer, mat.transp_tex.filename, mat.transp_tex.repeat_u, mat.transp_tex.repeat_v, matName + "_t", rootPath);
+		transparent_tex_node = AddTexture(writer, mat.transp_tex, matName + "_t", rootPath);
 	}
 	if(mat.emission_tex.filename && strlen(mat.emission_tex.filename) > 0)
 	{
-		emission_tex_node = AddTexture(writer, mat.emission_tex.filename, mat.emission_tex.repeat_u, mat.emission_tex.repeat_v, matName + "_e", rootPath);
+		emission_tex_node = AddTexture(writer, mat.emission_tex, matName + "_e", rootPath);
 	}
 	if(mat.displace_tex.filename && strlen(mat.displace_tex.filename) > 0)
 	{
-		displace_tex_node = AddTexture(writer, mat.displace_tex.filename, mat.displace_tex.repeat_u, mat.displace_tex.repeat_v, matName + "_disp", rootPath);
+		displace_tex_node = AddTexture(writer, mat.displace_tex, matName + "_disp", rootPath);
 	}
 	if(mat.refract_tex.filename && strlen(mat.refract_tex.filename) > 0)
 	{
-		refract_tex_node = AddTexture(writer, mat.refract_tex.filename, mat.refract_tex.repeat_u, mat.refract_tex.repeat_v, matName + "_refract", rootPath);
+		refract_tex_node = AddTexture(writer, mat.refract_tex, matName + "_refract", rootPath);
 	}
 
 	std::string ei_standard_node = matName + "_ei_stn";
@@ -1095,9 +1112,9 @@ void EssExporter::AddCustomOption(const EH_CustomRenderOptions &option)
 	AddCustomOptions(mWriter, option, mOptionName);
 }
 
-bool EssExporter::AddBackground(const std::string &hdri_name, const float rotation, const float hdri_intensity, bool enable_emit_GI)
+bool EssExporter::AddBackground(const EH_Sky *sky, bool enable_emit_GI)
 {
-	mEnvName = ::AddBackground(mWriter, hdri_name, rotation, hdri_intensity, enable_emit_GI);
+	mEnvName = ::AddBackground(mWriter, sky, enable_emit_GI);
 	return true;
 }
 
@@ -1122,6 +1139,28 @@ bool EssExporter::AddSun(const EH_Sun &sun)
 	double sun_dist = 149597870.0;
 	float hardness = cos(asin(sun_size / (sun_dist + sun_size)));
 	std::string sunName = ::AddSun(mWriter, sun_mat, sun.intensity, suncolor, hardness, mLightSamples);
+	mElInstances.push_back(sunName);
+	return true;
+}
+
+bool EssExporter::AddSun(const EH_Sun &sun, eiMatrix &mat)
+{
+	if (sun.intensity == 0 || sun.enabled == false)return true;
+	eiVector sun_dir;
+	eiVector suncolor;
+	suncolor.x = sun.color[0];
+	suncolor.y = sun.color[1];
+	suncolor.z = sun.color[2];
+	eiVector2 sun_sphere_coord = ei_vector2(sun.dir[0], sun.dir[1]);	
+	if (mIsLeftHand)
+	{
+		mat = mat * l2r;
+	}
+
+	double sun_size = 695500.0 * sun.soft_shadow;
+	double sun_dist = 149597870.0;
+	float hardness = cos(asin(sun_size / (sun_dist + sun_size)));
+	std::string sunName = ::AddSun(mWriter, mat, sun.intensity, suncolor, hardness, mLightSamples);
 	mElInstances.push_back(sunName);
 	return true;
 }

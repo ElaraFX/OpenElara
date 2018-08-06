@@ -357,11 +357,15 @@ struct EH_Texture
 	const char *filename;	/**< The image filename */
 	float repeat_u;			/**< The u repeat scale */
 	float repeat_v;			/**< The v repeat scale */
+	float offset_u;			/**< The u offset scale */
+	float offset_v;			/**< The v offset scale */
 
 	EH_Texture() :
 		filename(NULL),
 		repeat_u(1.0f),
-		repeat_v(1.0f)
+		repeat_v(1.0f),
+		offset_u(0.0f),
+		offset_v(0.0f)
 	{
 
 	}
@@ -472,8 +476,6 @@ struct EH_Material
  */
 EH_API void EH_add_material(EH_Context *ctx, const char *name, const EH_Material *mtl);
 
-
-
 /** The mesh instance data for user to fill
  */
 struct EH_MeshInstance
@@ -564,6 +566,7 @@ struct EH_Sky
 	const char *hdri_name;
 	float hdri_rotation; /* in degrees */
 	bool enable_emit_GI;
+	EH_RGB color;
 
 	EH_Sky() :
 		enabled(true),
@@ -571,7 +574,7 @@ struct EH_Sky
 		hdri_name(NULL),
 		hdri_rotation(0.0f)
 	{
-
+		color[0] = color[1] = color[2] = 0;
 	}
 };
 
