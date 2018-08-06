@@ -110,6 +110,11 @@ std::string AddCameraData(EssWriter& writer, const EH_Camera &cam, std::string& 
 	{
 		cam_tranmat = cam_tranmat * l2r;
 	}
+	if (cam.vertical_tilt_correction)
+	{
+		cam_tranmat.m[1][0] = cam_tranmat.m[1][1] = cam_tranmat.m[1][3] = 0;
+		cam_tranmat.m[1][2] = 1;
+	}
 	writer.AddMatrix("transform", cam_tranmat);
 	writer.AddMatrix("motion_transform", cam_tranmat);
 	writer.EndNode();

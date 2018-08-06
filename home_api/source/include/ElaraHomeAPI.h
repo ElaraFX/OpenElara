@@ -291,6 +291,7 @@ struct EH_Camera
 	bool cubemap_render;	/**< Render a 6x1 cubemap? */
 	bool spherical_render;  /**< Render spherical map */
 	bool stereo;
+	bool vertical_tilt_correction;
 
 	EH_Camera() :
 		fov(0.0f),
@@ -301,7 +302,8 @@ struct EH_Camera
 		image_height(0),
 		cubemap_render(false),
 		spherical_render(false),
-		stereo(false)
+		stereo(false),
+		vertical_tilt_correction(false)
 	{
 		memset(view_to_world, 0, sizeof(view_to_world));
 	}
